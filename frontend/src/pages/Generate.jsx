@@ -15,21 +15,33 @@ const Generate = () => {
   const [generatedData, setGeneratedData] = useState(null);
   const [error, setError] = useState(null);
 
+  // Managed workspace state to enable real-time canvas dragging and editing
+  const [nodes, setNodes] = useState([]);
+  const [edges, setEdges] = useState([]);
+  const [cost, setCost] = useState({ total_monthly_cost: '$0.00', services: [] });
+
   const handleGenerate = async (prompt, platform, history) => {
     setIsGenerating(true);
     setError(null);
     try {
       const response = await api.post('/generate/architecture', { prompt, platform, history });
       if (response.data && response.data.status === 'success') {
-        setGeneratedData(response.data);
+        const architecture = response.data;
+        setGeneratedData(architecture);
+        setNodes(architecture.nodes || []);
+        setEdges(architecture.edges || []);
+        
+        const initialCost = architecture.cost || { total_monthly_cost: '$0.00', services: [] };
+        setCost(initialCost);
+        
         setHasGenerated(true);
         // Dynamically save user generation to local storage history to avoid mocked static counts
         saveHistoryItem({
           type: 'generated',
           title: prompt,
           platform: platform,
-          services: response.data.nodes?.length || 0,
-          cost: response.data.cost?.total_monthly_cost || '$0.00'
+          services: architecture.nodes?.length || 0,
+          cost: initialCost.total_monthly_cost || '$0.00'
         });
       } else {
         setError(response.data?.message || 'Failed to generate architecture');
@@ -39,6 +51,67 @@ const Generate = () => {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  // Real-time automatic monthly cost estimation recalculations based on node addition/deletions
+  const handleDiagramChange = (nextNodes, nextEdges) => {
+    setNodes(nextNodes);
+    setEdges(nextEdges);
+
+    let total = 0;
+    const servicesBreakdown = [];
+
+    nextNodes.forEach((node) => {
+      const label = (node.label || '').toLowerCase();
+      let itemCost = 10.00;
+      let serviceName = node.label || 'Cloud Resource';
+      let usageMetric = 'Per 1 million requests / serverless execution';
+
+      if (label.includes('client') || label.includes('frontend') || label.includes('user')) {
+        itemCost = 0.00;
+        usageMetric = 'Free static page hosting & DNS mapping';
+      } else if (label.includes('api') || label.includes('gateway') || label.includes('cdn') || label.includes('cloudfront')) {
+        itemCost = 12.00;
+        usageMetric = 'Gateway transfer per 100 GB traffic';
+      } else if (label.includes('lambda') || label.includes('compute') || label.includes('function') || label.includes('logic')) {
+        itemCost = 18.00;
+        usageMetric = 'Serverless invocations per 1M triggers';
+      } else if (label.includes('db') || label.includes('database') || label.includes('table') || label.includes('sql') || label.includes('dynamodb')) {
+        itemCost = 28.00;
+        usageMetric = 'Provisioned write capacity units per month';
+      } else if (label.includes('s3') || label.includes('bucket') || label.includes('storage')) {
+        itemCost = 4.50;
+        usageMetric = 'Object asset space per 50 GB capacity';
+      } else if (label.includes('auth') || label.includes('cognito') || label.includes('security')) {
+        itemCost = 15.00;
+        usageMetric = 'Active directories IAM validation cycles';
+      }
+
+      total += itemCost;
+      servicesBreakdown.push({
+        name: serviceName,
+        monthly_cost: `$${itemCost.toFixed(2)}`,
+        breakdown: usageMetric
+      });
+    });
+
+    const updatedCost = {
+      total_monthly_cost: `$${total.toFixed(2)}`,
+      services: servicesBreakdown
+    };
+
+    setCost(updatedCost);
+
+    // Keep active JSON tab synchronized in real-time
+    setGeneratedData((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        nodes: nextNodes,
+        edges: nextEdges,
+        cost: updatedCost
+      };
+    });
   };
 
   return (
@@ -108,7 +181,11 @@ const Generate = () => {
               ) : (
                 <>
                   {activeTab === 'diagram' ? (
-                    <FlowDiagram nodes={generatedData?.nodes} edges={generatedData?.edges} />
+                    <FlowDiagram 
+                      nodes={nodes} 
+                      edges={edges} 
+                      onDiagramChange={handleDiagramChange}
+                    />
                   ) : activeTab === 'cost' ? (
                     <motion.div 
                       initial={{ opacity: 0 }}
@@ -120,10 +197,10 @@ const Generate = () => {
                         <div>
                           <h5 className="text-slate-400 font-bold text-xs uppercase tracking-wider mb-1">Estimated Monthly Total</h5>
                           <p className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
-                            {generatedData?.cost?.total_monthly_cost || '$0.00'}
+                            {cost.total_monthly_cost || '$0.00'}
                           </p>
                         </div>
-                        <div className="bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-xl text-emerald-400 font-bold text-xs uppercase tracking-widest">
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-xl text-emerald-400 font-bold text-xs uppercase tracking-widest animate-pulse">
                           Cost Optimized
                         </div>
                       </div>
@@ -141,7 +218,7 @@ const Generate = () => {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800 bg-slate-900/40 text-xs">
-                              {generatedData?.cost?.services?.map((svc, i) => (
+                              {cost.services?.map((svc, i) => (
                                 <tr key={i} className="hover:bg-slate-800/30 transition-colors">
                                   <td className="p-4 font-bold text-white">{svc.name}</td>
                                   <td className="p-4 font-bold text-emerald-400">{svc.monthly_cost}</td>
@@ -181,4 +258,3 @@ const Generate = () => {
 };
 
 export default Generate;
-
