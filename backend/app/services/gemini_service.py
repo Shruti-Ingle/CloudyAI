@@ -75,7 +75,7 @@ class GeminiService:
         }
 
         # Multi-model fallback list to handle temporary high demand (503s) of preview/new models
-        models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+        models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest"]
         last_error = None
 
         for model in models:
@@ -138,7 +138,7 @@ class GeminiService:
         }
 
         # Multi-model fallback list to handle temporary high demand (503s) of preview/new models
-        models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+        models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest"]
         last_error = None
 
         for model in models:
@@ -205,7 +205,7 @@ class GeminiService:
         }
 
         # Multi-model fallback list to handle temporary high demand (503s) of preview/new models
-        models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+        models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest"]
         last_error = None
 
         for model in models:
