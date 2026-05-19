@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -14,7 +14,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Server, Cpu, Database, Cloud, Globe, Shield, HardDrive, Trash2, Plus, GripVertical, ChevronLeft, ChevronRight
+  Server, Cpu, Database, Cloud, Globe, Shield, HardDrive, Trash2, Plus, GripVertical, ChevronLeft, ChevronRight, Settings, Info, Sliders, Check
 } from 'lucide-react';
 
 const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiagramChange }) => {
@@ -23,6 +23,7 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [isPaletteOpen, setIsPaletteOpen] = useState(true);
+  const [inspectorNode, setInspectorNode] = useState(null);
 
   const getServiceIcon = (label = '') => {
     const l = label.toLowerCase();
@@ -46,6 +47,32 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
     }
     return <Server className="w-5 h-5 text-indigo-400" />;
   };
+
+  // Helper to initialize properties for a node
+  const getNodeProperties = useCallback((node) => {
+    if (node.properties) return node.properties;
+    
+    const label = (node.label || '').toLowerCase();
+    if (label.includes('client') || label.includes('frontend') || label.includes('user')) {
+      return { type: 'client' };
+    }
+    if (label.includes('api') || label.includes('gateway') || label.includes('cdn') || label.includes('cloudfront')) {
+      return { type: 'api', requests: 2 }; // default 2 million requests
+    }
+    if (label.includes('lambda') || label.includes('compute') || label.includes('function') || label.includes('logic')) {
+      return { type: 'compute', size: 't3.medium' }; // default size
+    }
+    if (label.includes('db') || label.includes('database') || label.includes('dynamodb') || label.includes('table') || label.includes('sql')) {
+      return { type: 'db', size: 'db.t3.medium', replicas: 1, multiAZ: false };
+    }
+    if (label.includes('s3') || label.includes('bucket') || label.includes('storage')) {
+      return { type: 's3', capacity: 150, glacier: false }; // default 150GB
+    }
+    if (label.includes('auth') || label.includes('cognito') || label.includes('security')) {
+      return { type: 'auth', users: 10 }; // default 10k users
+    }
+    return { type: 'other' };
+  }, []);
 
   // Convert raw nodes to beautifully styled neon-glass components
   const styleRawNodes = useCallback((rawNodes) => {
@@ -83,22 +110,41 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
         shadowColor = 'rgba(250, 204, 21, 0.25)';
       }
 
+      const nodeProps = getNodeProperties(node);
+
       return {
         id: node.id,
         type: 'default',
         position: node.position,
         label: labelText,
+        properties: nodeProps,
         data: {
           label: (
-            <div className="flex items-center gap-3 py-1.5 px-1 select-none">
-              <div className="flex-shrink-0 p-1.5 rounded-lg bg-slate-950/40 border border-slate-700/50">
-                {getServiceIcon(labelText)}
+            <div className="flex flex-col gap-1 py-1 px-0.5 select-none">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 p-1.5 rounded-lg bg-slate-950/40 border border-slate-700/50">
+                  {getServiceIcon(labelText)}
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-white text-xs tracking-wide truncate max-w-[130px]">{labelText}</p>
+                  <p className="text-[10px] text-slate-400 font-medium capitalize">
+                    {node.type || 'Resource'}
+                  </p>
+                </div>
               </div>
-              <div className="text-left">
-                <p className="font-bold text-white text-xs tracking-wide">{labelText}</p>
-                <p className="text-[10px] text-slate-400 font-medium capitalize">
-                  {node.type || 'Resource'}
-                </p>
+              
+              {/* Micro specs indicator */}
+              <div className="flex items-center justify-between mt-1 pt-1 border-t border-slate-800/40 text-[9px] text-slate-500 font-semibold uppercase tracking-wider">
+                <span>Specs</span>
+                <span className="text-indigo-400">
+                  {nodeProps.type === 'compute' && nodeProps.size}
+                  {nodeProps.type === 'db' && `${nodeProps.size} (x${nodeProps.replicas})`}
+                  {nodeProps.type === 's3' && `${nodeProps.capacity} GB`}
+                  {nodeProps.type === 'api' && `${nodeProps.requests}M reqs`}
+                  {nodeProps.type === 'auth' && `${nodeProps.users}k users`}
+                  {nodeProps.type === 'client' && 'Web app'}
+                  {nodeProps.type === 'other' && 'Standard'}
+                </span>
               </div>
             </div>
           )
@@ -117,7 +163,7 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
         }
       };
     });
-  }, []);
+  }, [getNodeProperties]);
 
   // Update component states on initial generation
   useEffect(() => {
@@ -201,7 +247,7 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
         const nextNodes = nds.concat(styledNewNode);
         if (onDiagramChange) {
           onDiagramChange(
-            nextNodes.map(n => ({ id: n.id, position: n.position, label: n.label })),
+            nextNodes.map(n => ({ id: n.id, position: n.position, label: n.label, properties: n.properties })),
             edges
           );
         }
@@ -239,7 +285,7 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
         const nextEdges = addEdge(newEdge, eds);
         if (onDiagramChange) {
           onDiagramChange(
-            nodes.map(n => ({ id: n.id, position: n.position, label: n.label })),
+            nodes.map(n => ({ id: n.id, position: n.position, label: n.label, properties: n.properties })),
             nextEdges
           );
         }
@@ -254,7 +300,7 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
     (event, node) => {
       if (onDiagramChange) {
         onDiagramChange(
-          nodes.map(n => n.id === node.id ? { ...n, position: node.position } : { id: n.id, position: n.position, label: n.label }),
+          nodes.map(n => n.id === node.id ? { ...n, position: node.position } : { id: n.id, position: n.position, label: n.label, properties: n.properties }),
           edges
         );
       }
@@ -265,10 +311,12 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
   // Node and Edge clicking selectors
   const onNodeClick = useCallback((event, node) => {
     setSelectedNodeId(node.id);
+    setInspectorNode(node);
   }, []);
 
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null);
+    setInspectorNode(null);
   }, []);
 
   // Handle deletions of selected resource
@@ -283,14 +331,48 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
     setNodes(nextNodes);
     setEdges(nextEdges);
     setSelectedNodeId(null);
+    setInspectorNode(null);
 
     if (onDiagramChange) {
       onDiagramChange(
-        nextNodes.map(n => ({ id: n.id, position: n.position, label: n.label })),
+        nextNodes.map(n => ({ id: n.id, position: n.position, label: n.label, properties: n.properties })),
         nextEdges
       );
     }
   }, [selectedNodeId, nodes, edges, onDiagramChange, setNodes, setEdges]);
+
+  // Handle Inspector Property adjustments
+  const handlePropertyChange = (key, value) => {
+    if (!inspectorNode) return;
+
+    const updatedProps = {
+      ...inspectorNode.properties,
+      [key]: value
+    };
+
+    const nextNodes = nodes.map((node) => {
+      if (node.id === inspectorNode.id) {
+        const rawNode = {
+          ...node,
+          properties: updatedProps
+        };
+        // Re-style updated node to reflect live specs changes
+        return styleRawNodes([rawNode])[0];
+      }
+      return node;
+    });
+
+    setNodes(nextNodes);
+    const updatedNode = nextNodes.find(n => n.id === inspectorNode.id);
+    setInspectorNode(updatedNode);
+
+    if (onDiagramChange) {
+      onDiagramChange(
+        nextNodes.map(n => ({ id: n.id, position: n.position, label: n.label, properties: n.properties })),
+        edges
+      );
+    }
+  };
 
   // Sidebar Palette item
   const DragItem = ({ type, label, icon: Icon, color }) => (
@@ -323,7 +405,7 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
             className="h-full border-r border-slate-800 bg-slate-950/90 backdrop-blur-md p-4 flex flex-col gap-3 relative z-30 select-none overflow-y-auto shrink-0"
           >
             <div className="flex items-center justify-between pb-2 border-b border-slate-800 mb-2">
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider">Resource Palette</h4>
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-Outfit">Resource Palette</h4>
               <button 
                 onClick={() => setIsPaletteOpen(false)}
                 className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded transition-colors"
@@ -373,7 +455,7 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
           )}
 
           <div className="bg-slate-900/80 border border-slate-800 px-3.5 py-2 rounded-xl backdrop-blur-md shadow-md">
-            <p className="text-[10px] text-slate-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
+            <p className="text-[10px] text-slate-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider font-Outfit">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
               Interactive Cloud Canvas
             </p>
@@ -406,6 +488,211 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
           <Background variant="dots" gap={18} size={1.2} color="#1e293b" />
         </ReactFlow>
       </div>
+
+      {/* Sliding Inspector Drawer on Right */}
+      <AnimatePresence>
+        {inspectorNode && inspectorNode.properties && (
+          <motion.div
+            initial={{ x: '100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '100%', opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="h-full w-80 border-l border-slate-800 bg-slate-950/95 backdrop-blur-md p-5 flex flex-col gap-4 relative z-35 select-none overflow-y-auto shrink-0 font-Outfit"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-indigo-400" />
+                Specs Inspector
+              </h4>
+              <button 
+                onClick={() => setInspectorNode(null)}
+                className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* General Info Card */}
+            <div className="p-3 bg-slate-900/60 border border-slate-850 rounded-xl flex flex-col gap-1">
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Active Resource</p>
+              <h5 className="text-sm font-extrabold text-white">{inspectorNode.label}</h5>
+              <p className="text-[10px] text-indigo-400 font-medium capitalize mt-0.5">
+                ID: {inspectorNode.id}
+              </p>
+            </div>
+
+            {/* Custom Interactive Inputs based on type */}
+            <div className="flex-1 flex flex-col gap-5 pt-2">
+              {/* 1. Compute Node Inspector */}
+              {inspectorNode.properties.type === 'compute' && (
+                <div className="flex flex-col gap-3">
+                  <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Server Capacity Size</label>
+                  <select
+                    value={inspectorNode.properties.size}
+                    onChange={(e) => handlePropertyChange('size', e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-indigo-500 shadow-inner"
+                  >
+                    <option value="t3.micro">t3.micro (Serverless Basic - $8.50)</option>
+                    <option value="t3.medium">t3.medium (Standard Serverless - $18.00)</option>
+                    <option value="c6g.large">c6g.large (High Compute - $38.00)</option>
+                  </select>
+                  <div className="p-3 bg-slate-900/30 rounded-xl flex items-start gap-2 border border-slate-850">
+                    <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-slate-400 leading-relaxed">
+                      Standard micro-compute is optimized for low-latency triggers. Higher tiers are designed for multi-threading operations.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Database Node Inspector */}
+              {inspectorNode.properties.type === 'db' && (
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Database Size</label>
+                    <select
+                      value={inspectorNode.properties.size}
+                      onChange={(e) => handlePropertyChange('size', e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-indigo-500 shadow-inner"
+                    >
+                      <option value="db.t3.micro">db.t3.micro (Basic DB - $15.00)</option>
+                      <option value="db.t3.medium">db.t3.medium (Standard DB - $32.00)</option>
+                      <option value="db.m6g.large">db.m6g.large (Enterprise DB - $68.00)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Replicas Capacity</label>
+                      <span className="text-xs font-bold text-emerald-400">{inspectorNode.properties.replicas} Node(s)</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      value={inspectorNode.properties.replicas}
+                      onChange={(e) => handlePropertyChange('replicas', parseInt(e.target.value))}
+                      className="w-full h-1 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-slate-900/40 border border-slate-850 rounded-xl">
+                    <div className="text-left">
+                      <p className="text-xs font-bold text-white">Multi-AZ Clustering</p>
+                      <p className="text-[10px] text-slate-500">Enable high-availability redundancy</p>
+                    </div>
+                    <button
+                      onClick={() => handlePropertyChange('multiAZ', !inspectorNode.properties.multiAZ)}
+                      className={`w-10 h-6 rounded-full transition-colors flex items-center p-0.5 focus:outline-none ${
+                        inspectorNode.properties.multiAZ ? 'bg-emerald-500' : 'bg-slate-800'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-white transition-transform shadow-md ${
+                        inspectorNode.properties.multiAZ ? 'translate-x-4' : 'translate-x-0'
+                      }`} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Storage Node Inspector */}
+              {inspectorNode.properties.type === 's3' && (
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Capacity Limit</label>
+                      <span className="text-xs font-bold text-rose-400">{inspectorNode.properties.capacity} GB</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="50"
+                      max="1000"
+                      step="50"
+                      value={inspectorNode.properties.capacity}
+                      onChange={(e) => handlePropertyChange('capacity', parseInt(e.target.value))}
+                      className="w-full h-1 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-rose-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-slate-900/40 border border-slate-850 rounded-xl">
+                    <div className="text-left">
+                      <p className="text-xs font-bold text-white">Glacier Deep Archiving</p>
+                      <p className="text-[10px] text-slate-500">Auto-transition old object assets</p>
+                    </div>
+                    <button
+                      onClick={() => handlePropertyChange('glacier', !inspectorNode.properties.glacier)}
+                      className={`w-10 h-6 rounded-full transition-colors flex items-center p-0.5 focus:outline-none ${
+                        inspectorNode.properties.glacier ? 'bg-rose-500' : 'bg-slate-800'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-white transition-transform shadow-md ${
+                        inspectorNode.properties.glacier ? 'translate-x-4' : 'translate-x-0'
+                      }`} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. API Gateway Node Inspector */}
+              {inspectorNode.properties.type === 'api' && (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Request Volume</label>
+                    <span className="text-xs font-bold text-sky-400">{inspectorNode.properties.requests}M / mo</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="15"
+                    value={inspectorNode.properties.requests}
+                    onChange={(e) => handlePropertyChange('requests', parseInt(e.target.value))}
+                    className="w-full h-1 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                    Estimated bandwidth costs are scaled per million ingress trigger calls. CDNs feature auto-caching layers.
+                  </p>
+                </div>
+              )}
+
+              {/* 5. IAM Security/Auth Node Inspector */}
+              {inspectorNode.properties.type === 'auth' && (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Active Users (MAU)</label>
+                    <span className="text-xs font-bold text-yellow-400">{inspectorNode.properties.users}K / mo</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="100"
+                    step="5"
+                    value={inspectorNode.properties.users}
+                    onChange={(e) => handlePropertyChange('users', parseInt(e.target.value))}
+                    className="w-full h-1 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+                  />
+                </div>
+              )}
+
+              {/* 6. Static Client */}
+              {inspectorNode.properties.type === 'client' && (
+                <div className="p-4 bg-slate-900/30 border border-slate-850 rounded-2xl flex flex-col gap-2 text-center items-center">
+                  <Globe className="w-8 h-8 text-indigo-400 mb-1 animate-pulse" />
+                  <p className="text-xs font-bold text-white">DNS Domain Edge Host</p>
+                  <p className="text-[10px] text-slate-500 leading-normal">
+                    This represents your user's ingress device client. It features free static edge hosting on standard CDN proxies.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Save indicator footer */}
+            <div className="pt-3 border-t border-slate-800 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 font-semibold">
+              <Check className="w-3.5 h-3.5 text-emerald-500" />
+              Configuration Autosaved Live
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
