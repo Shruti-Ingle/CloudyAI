@@ -99,6 +99,8 @@ class GeminiService:
                 error_msg = e.read().decode('utf-8')
                 print(f"Model {model} failed with HTTP Error {e.code}: {error_msg}")
                 last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
+                if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "resource_exhausted" in error_msg.lower():
+                    return {"error": "Google Gemini free-tier rate limit exceeded. Please wait 10-15 seconds and try generating again!"}
             except Exception as e:
                 print(f"Model {model} failed with general error: {e}")
                 last_error = f"Model {model} failed: {str(e)}"
@@ -162,6 +164,8 @@ class GeminiService:
                 error_msg = e.read().decode('utf-8')
                 print(f"Model {model} failed with HTTP Error {e.code}: {error_msg}")
                 last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
+                if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "resource_exhausted" in error_msg.lower():
+                    return {"reply": "I am temporarily experiencing high demand from Google's free-tier rate limits. Please wait 10-15 seconds and resend your message!"}
             except Exception as e:
                 print(f"Model {model} failed with general error: {e}")
                 last_error = f"Model {model} failed: {str(e)}"
