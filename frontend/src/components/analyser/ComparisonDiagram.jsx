@@ -37,11 +37,16 @@ const initialEdgesAfter = [
   { id: 'e3-4', source: 'lambda', target: 'rds', style: { stroke: '#475569' } },
 ];
 
-const ComparisonDiagram = () => {
+const ComparisonDiagram = ({ beforeNodes, beforeEdges, suggestedNodes, suggestedEdges }) => {
   const [view, setView] = useState('after');
   
-  const nodes = view === 'after' ? initialNodesAfter : initialNodesBefore;
-  const edges = view === 'after' ? initialEdgesAfter : initialEdgesBefore;
+  const nodes = view === 'after' 
+    ? (suggestedNodes || initialNodesAfter) 
+    : (beforeNodes || initialNodesBefore);
+    
+  const edges = view === 'after' 
+    ? (suggestedEdges || initialEdgesAfter) 
+    : (beforeEdges || initialEdgesBefore);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -66,7 +71,7 @@ const ComparisonDiagram = () => {
       
       <div className="flex-1 bg-slate-900 relative">
         <ReactFlow
-          key={view} // force re-render on view change to reset viewport
+          key={`${view}-${nodes.length}-${edges.length}`} // force re-render on view change to reset viewport
           nodes={nodes}
           edges={edges}
           fitView

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -27,9 +27,21 @@ const initialEdges = [
   { id: 'e3-5', source: 'lambda', target: 's3', animated: true, style: { stroke: '#EF4444' } },
 ];
 
-const FlowDiagram = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+const FlowDiagram = ({ nodes: propNodes, edges: propEdges }) => {
+  const [nodes, setNodes, onNodesChange] = useNodesState(propNodes || initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(propEdges || initialEdges);
+
+  useEffect(() => {
+    if (propNodes) {
+      setNodes(propNodes);
+    }
+  }, [propNodes, setNodes]);
+
+  useEffect(() => {
+    if (propEdges) {
+      setEdges(propEdges);
+    }
+  }, [propEdges, setEdges]);
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth, generate, analyse, user
+from app.routers import auth, generate, analyse, user
+from app import config
 
 app = FastAPI(title="CloudyAI Backend")
 

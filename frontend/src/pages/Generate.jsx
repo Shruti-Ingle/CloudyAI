@@ -3,14 +3,32 @@ import PageWrapper from '../components/layout/PageWrapper';
 import ChatInterface from '../components/cloudy/ChatInterface';
 import FlowDiagram from '../components/architecture/FlowDiagram';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../utils/api';
+import { AlertCircle } from 'lucide-react';
 
 const Generate = () => {
   const [hasGenerated, setHasGenerated] = useState(false);
   const [activeTab, setActiveTab] = useState('diagram');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedData, setGeneratedData] = useState(null);
+  const [error, setError] = useState(null);
 
-  const handleGenerate = (prompt) => {
-    // In a real app, send prompt to backend
-    setHasGenerated(true);
+  const handleGenerate = async (prompt) => {
+    setIsGenerating(true);
+    setError(null);
+    try {
+      const response = await api.post('/generate/architecture', { prompt });
+      if (response.data && response.data.status === 'success') {
+        setGeneratedData(response.data);
+        setHasGenerated(true);
+      } else {
+        setError(response.data?.message || 'Failed to generate architecture');
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || 'Connection error to the backend');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -25,7 +43,7 @@ const Generate = () => {
 
       {/* Results Column */}
       <AnimatePresence>
-        {hasGenerated && (
+        {(hasGenerated || isGenerating || error) && (
           <motion.div 
             initial={{ opacity: 0, x: 20, width: 0 }}
             animate={{ opacity: 1, x: 0, width: '66.666667%' }}
@@ -37,6 +55,7 @@ const Generate = () => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === 'diagram' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-700'
                 }`}
+                disabled={isGenerating}
               >
                 Diagram View
               </button>
@@ -45,59 +64,44 @@ const Generate = () => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === 'json' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-700'
                 }`}
+                disabled={isGenerating}
               >
                 JSON View
               </button>
             </div>
             
-            <div className="flex-1 p-4 overflow-hidden relative">
-              {activeTab === 'diagram' ? (
-                <FlowDiagram />
+            <div className="flex-1 p-4 overflow-hidden relative flex flex-col">
+              {isGenerating ? (
+                <div className="flex-1 flex flex-col items-center justify-center">
+                  <div className="relative w-20 h-20 mb-6">
+                    <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20"></div>
+                    <div className="absolute inset-0 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
+                  </div>
+                  <h4 className="text-xl font-bold text-white mb-2">Generating Architecture...</h4>
+                  <p className="text-slate-400 text-sm">Designing resource topology and connecting nodes.</p>
+                </div>
+              ) : error ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+                  <AlertCircle className="w-16 h-16 text-red-500 mb-4 animate-bounce" />
+                  <h4 className="text-xl font-bold text-white mb-2">Generation Failed</h4>
+                  <p className="text-slate-400 text-sm max-w-md">{error}</p>
+                </div>
               ) : (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="w-full h-full bg-slate-900 rounded-xl p-4 overflow-auto text-sm text-green-400 font-mono border border-slate-700/50"
-                >
-                  <pre>
-{`{
-  "name": "Generated Architecture",
-  "platform": "AWS",
-  "components": [
-    {
-      "id": "client",
-      "type": "WebClient",
-      "framework": "React"
-    },
-    {
-      "id": "api",
-      "type": "APIGateway"
-    },
-    {
-      "id": "lambda",
-      "type": "Compute",
-      "service": "AWS Lambda"
-    },
-    {
-      "id": "db",
-      "type": "Database",
-      "service": "DynamoDB"
-    },
-    {
-      "id": "s3",
-      "type": "Storage",
-      "service": "S3"
-    }
-  ],
-  "connections": [
-    { "source": "client", "target": "api" },
-    { "source": "api", "target": "lambda" },
-    { "source": "lambda", "target": "db" },
-    { "source": "lambda", "target": "s3" }
-  ]
-}`}
-                  </pre>
-                </motion.div>
+                <>
+                  {activeTab === 'diagram' ? (
+                    <FlowDiagram nodes={generatedData?.nodes} edges={generatedData?.edges} />
+                  ) : (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="w-full h-full bg-slate-900 rounded-xl p-4 overflow-auto text-sm text-green-400 font-mono border border-slate-700/50"
+                    >
+                      <pre className="whitespace-pre-wrap select-all">
+                        {JSON.stringify(generatedData, null, 2)}
+                      </pre>
+                    </motion.div>
+                  )}
+                </>
               )}
             </div>
           </motion.div>
@@ -108,3 +112,4 @@ const Generate = () => {
 };
 
 export default Generate;
+

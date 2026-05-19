@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
+from app.services.gemini_service import GeminiService
 
 router = APIRouter()
 
@@ -9,15 +10,21 @@ class GenerateRequest(BaseModel):
 
 @router.post("/architecture")
 def generate_architecture(req: GenerateRequest):
-    # Mocking Bedrock Claude generation
+    gemini_service = GeminiService()
+    result = gemini_service.generate_architecture(req.prompt)
+    
+    if "error" in result:
+        return {
+            "status": "error",
+            "message": result["error"],
+            "raw": result.get("raw", "")
+        }
+        
     return {
         "status": "success",
         "platform": req.platform,
-        "nodes": [
-            {"id": "client", "type": "WebClient"},
-            {"id": "api", "type": "APIGateway"},
-            {"id": "lambda", "type": "Compute"}
-        ]
+        "nodes": result.get("nodes", []),
+        "edges": result.get("edges", [])
     }
 
 @router.get("/history")

@@ -1,8 +1,10 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://9j3oe7izwh.execute-api.eu-west-2.amazonaws.com/Prod';
+
 const api = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -27,7 +29,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         // Try refreshing token
-        const response = await axios.post('http://localhost:8000/auth/refresh', {}, {
+        const response = await axios.post(`${API_URL}/auth/refresh`, {}, {
           withCredentials: true // Assuming httpOnly cookie
         });
         const { access_token } = response.data;

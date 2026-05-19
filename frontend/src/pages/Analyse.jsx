@@ -4,30 +4,58 @@ import UploadInput from '../components/analyser/UploadInput';
 import BreakdownList from '../components/analyser/BreakdownList';
 import ComparisonDiagram from '../components/analyser/ComparisonDiagram';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
-
-const mockIssues = [
-  { severity: 'Critical', title: 'Single Point of Failure', description: 'The EC2 monolith handles all API requests. If it goes down, the entire application fails.', suggestion: 'Migrate to a Serverless approach using API Gateway and AWS Lambda for high availability.' },
-  { severity: 'Warning', title: 'High Compute Costs', description: 'Running an EC2 instance 24/7 for variable traffic is not cost-effective.', suggestion: 'Serverless compute scales to zero when not in use.' },
-  { severity: 'Info', title: 'No Caching Layer', description: 'Database queries go directly to RDS on every request.', suggestion: 'Consider adding Amazon ElastiCache (Redis) or DynamoDB DAX to reduce DB load.' }
-];
+import { Loader2, AlertCircle } from 'lucide-react';
+import api from '../utils/api';
 
 const Analyse = () => {
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [hasAnalysed, setHasAnalysed] = useState(false);
+  const [issues, setIssues] = useState([]);
+  const [analysisData, setAnalysisData] = useState(null);
+  const [beforeNodes, setBeforeNodes] = useState(null);
+  const [beforeEdges, setBeforeEdges] = useState(null);
+  const [error, setError] = useState(null);
 
-  const handleUpload = (data) => {
+  const handleUpload = async (data) => {
     setIsAnalysing(true);
-    // Mock analysis delay
-    setTimeout(() => {
+    setError(null);
+    setBeforeNodes(null);
+    setBeforeEdges(null);
+    
+    try {
+      let payload = data;
+      if (typeof data === 'string') {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.nodes && parsed.edges) {
+            setBeforeNodes(parsed.nodes);
+            setBeforeEdges(parsed.edges);
+          }
+        } catch (e) {
+          // Paste was plain text or not standard flow JSON
+        }
+      } else {
+        payload = JSON.stringify({ name: "Legacy System", platform: "AWS", components: [] });
+      }
+
+      const response = await api.post('/analyse/architecture', { architecture_data: payload });
+      if (response.data && response.data.status === 'success') {
+        setAnalysisData(response.data);
+        setIssues(response.data.issues || []);
+        setHasAnalysed(true);
+      } else {
+        setError(response.data?.message || 'Failed to analyse architecture');
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || 'Connection error to the backend');
+    } finally {
       setIsAnalysing(false);
-      setHasAnalysed(true);
-    }, 2500);
+    }
   };
 
   return (
     <PageWrapper className="flex flex-col h-[calc(100vh-8rem)]">
-      {!hasAnalysed && !isAnalysing && (
+      {!hasAnalysed && !isAnalysing && !error && (
         <div className="max-w-3xl mx-auto w-full mt-10">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-white mb-4">Architecture Analyser</h1>
@@ -47,7 +75,21 @@ const Analyse = () => {
         </div>
       )}
 
-      {hasAnalysed && (
+      {error && (
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+          <AlertCircle className="w-16 h-16 text-red-500 mb-4 animate-bounce" />
+          <h3 className="text-2xl font-bold text-white mb-2">Analysis Failed</h3>
+          <p className="text-slate-400 text-sm max-w-md mb-6">{error}</p>
+          <button 
+            onClick={() => setError(null)}
+            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors font-medium"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
+      {hasAnalysed && !isAnalysing && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -55,7 +97,7 @@ const Analyse = () => {
         >
           {/* Left Column: Breakdown */}
           <div className="w-1/3 overflow-y-auto pr-2 custom-scrollbar">
-            <BreakdownList issues={mockIssues} />
+            <BreakdownList issues={issues} />
             <button 
               onClick={() => setHasAnalysed(false)}
               className="mt-8 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-700 transition-colors w-full"
@@ -66,7 +108,12 @@ const Analyse = () => {
 
           {/* Right Column: Comparison */}
           <div className="flex-1 glass-card rounded-2xl border border-slate-700/50 overflow-hidden shadow-xl">
-            <ComparisonDiagram />
+            <ComparisonDiagram 
+              beforeNodes={beforeNodes}
+              beforeEdges={beforeEdges}
+              suggestedNodes={analysisData?.suggested_nodes}
+              suggestedEdges={analysisData?.suggested_edges}
+            />
           </div>
         </motion.div>
       )}
@@ -75,3 +122,4 @@ const Analyse = () => {
 };
 
 export default Analyse;
+
