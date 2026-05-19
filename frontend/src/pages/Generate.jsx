@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import { AlertCircle } from 'lucide-react';
 
+import { saveHistoryItem } from '../utils/history';
+
 const Generate = () => {
   const [hasGenerated, setHasGenerated] = useState(false);
   const [activeTab, setActiveTab] = useState('diagram');
@@ -21,6 +23,14 @@ const Generate = () => {
       if (response.data && response.data.status === 'success') {
         setGeneratedData(response.data);
         setHasGenerated(true);
+        // Dynamically save user generation to local storage history to avoid mocked static counts
+        saveHistoryItem({
+          type: 'generated',
+          title: prompt,
+          platform: platform,
+          services: response.data.nodes?.length || 0,
+          cost: response.data.cost?.total_monthly_cost || '$0.00'
+        });
       } else {
         setError(response.data?.message || 'Failed to generate architecture');
       }

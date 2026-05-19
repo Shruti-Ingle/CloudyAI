@@ -11,12 +11,13 @@ export const AuthProvider = ({ children }) => {
     // Check if user is logged in
     const checkAuth = async () => {
       const token = localStorage.getItem('accessToken');
-      if (token) {
+      const savedUser = localStorage.getItem('user');
+      if (token && savedUser) {
         try {
-          // For now, mock a user. In real app, call /user/profile
-          setUser({ id: 1, name: 'Demo Company', email: 'admin@democompany.com' });
+          setUser(JSON.parse(savedUser));
         } catch (error) {
           localStorage.removeItem('accessToken');
+          localStorage.removeItem('user');
           setUser(null);
         }
       }
@@ -30,6 +31,7 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/login', { email, password });
       const { access_token, user } = response.data;
       localStorage.setItem('accessToken', access_token);
+      localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
       return { success: true };
     } catch (error) {
@@ -53,6 +55,7 @@ export const AuthProvider = ({ children }) => {
       // Ignore
     } finally {
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
       setUser(null);
       window.location.href = '/login';
     }
