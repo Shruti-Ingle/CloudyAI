@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Cloud, Layers, Cpu } from 'lucide-react';
+import { Send, Loader2, Cloud, Layers, Cpu, Sparkles } from 'lucide-react';
 import ChatBubble from './ChatBubble';
+import api from '../../utils/api';
 
 const ChatInterface = ({ onGenerate }) => {
   const [messages, setMessages] = useState([
-    { text: "Hi! I'm Cloudy. Select your preferred Cloud Platform above, tell me what kind of app you want to build, and I will generate the architecture and estimated monthly cost breakdown for you!", isBot: true }
+    { text: "Hi! I'm Cloudy. Select your preferred Cloud Platform above, tell me what kind of app you want to build, and I will guide you with architecture recommendations!", isBot: true }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -21,30 +22,44 @@ const ChatInterface = ({ onGenerate }) => {
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isTyping) return;
 
     const userMessage = input.trim();
-    setMessages(prev => [...prev, { text: userMessage, isBot: false }]);
+    const newMessages = [...messages, { text: userMessage, isBot: false }];
+    setMessages(newMessages);
     setInput('');
     setIsTyping(true);
 
-    // AI logic simulation
-    setTimeout(() => {
-      if (messages.length === 1) {
-        setMessages(prev => [...prev, { 
-          text: `Awesome choice using ${selectedPlatform}! How many users do you expect initially, and what is your target deployment region?`, 
-          isBot: true 
-        }]);
-        setIsTyping(false);
+    try {
+      // Call backend chat API to get high-fidelity dynamic suggestions & relevant questions from Gemini!
+      const response = await api.post('/generate/chat', {
+        message: userMessage,
+        history: messages,
+        platform: selectedPlatform
+      });
+
+      if (response.data && response.data.reply) {
+        setMessages(prev => [...prev, { text: response.data.reply, isBot: true }]);
       } else {
-        setMessages(prev => [...prev, { 
-          text: `Got it. I have all the details. I will design a cost-optimized ${selectedPlatform} architecture and calculate the monthly cost for you.`, 
-          isBot: true 
-        }]);
-        setIsTyping(false);
-        onGenerate(userMessage, selectedPlatform);
+        setMessages(prev => [...prev, { text: "I received an unexpected response. Feel free to explain your application topology or click Generate Architecture!", isBot: true }]);
       }
-    }, 1500);
+    } catch (err) {
+      console.error("Chat API error:", err);
+      // Clean fallback response
+      setMessages(prev => [...prev, { 
+        text: `Got it! Let's focus on designing this on ${selectedPlatform}. Tell me more details or click 'Generate Architecture' whenever you are ready!`, 
+        isBot: true 
+      }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const handleGenerateClick = () => {
+    const userPrompts = messages.filter(m => !m.isBot).map(m => m.text);
+    const finalPrompt = userPrompts[userPrompts.length - 1] || "Web Application Architecture";
+    // Invoke standard generation with full message context!
+    onGenerate(finalPrompt, selectedPlatform, messages);
   };
 
   return (
@@ -53,8 +68,18 @@ const ChatInterface = ({ onGenerate }) => {
       <div className="p-4 border-b border-slate-700/50 bg-slate-800/80 backdrop-blur-sm flex items-center justify-between">
         <h3 className="font-semibold text-white flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          Cloudy AI Assistant
+          Cloudy AI Architect
         </h3>
+        
+        {messages.length > 1 && (
+          <button
+            onClick={handleGenerateClick}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-lg text-xs font-bold shadow-md shadow-indigo-900/40 border border-indigo-400/30 transition-all transform hover:scale-105 active:scale-95 animate-pulse"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Generate Diagram
+          </button>
+        )}
       </div>
 
       {/* Premium Platform Selector */}
@@ -109,14 +134,14 @@ const ChatInterface = ({ onGenerate }) => {
         <div ref={endOfMessagesRef} />
       </div>
 
-      {/* Input Form */}
-      <div className="p-4 bg-slate-800/50 border-t border-slate-700/50">
+      {/* Input Form & Instant Actions */}
+      <div className="p-4 bg-slate-800/50 border-t border-slate-700/50 flex flex-col gap-3">
         <form onSubmit={handleSend} className="relative flex items-center">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={`Describe your ${selectedPlatform} app...`}
+            placeholder={`Ask Cloudy about your ${selectedPlatform} system...`}
             className="w-full bg-slate-900 border border-slate-700 rounded-full pl-5 pr-12 py-3 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-inner"
             disabled={isTyping}
           />
@@ -128,6 +153,16 @@ const ChatInterface = ({ onGenerate }) => {
             <Send className="w-4 h-4" />
           </button>
         </form>
+
+        {messages.length > 1 && (
+          <button
+            onClick={handleGenerateClick}
+            className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-900/30 border border-indigo-500/20 transition-all flex items-center justify-center gap-2 active:scale-98"
+          >
+            <Sparkles className="w-4 h-4" />
+            Generate Architecture & Cost Estimate Now
+          </button>
+        )}
       </div>
     </div>
   );

@@ -8,13 +8,24 @@ class GeminiService:
         # We read GEMINI_API_KEY from environment variables
         self.api_key = os.environ.get("GEMINI_API_KEY")
 
-    def generate_architecture(self, prompt: str, platform: str = "AWS"):
+    def generate_architecture(self, prompt: str, platform: str = "AWS", history: list = None):
         if not self.api_key:
             return {"error": "GEMINI_API_KEY is not set. Please set the GEMINI_API_KEY environment variable."}
 
+        # If conversation history is provided, build a contextual prompt combining user requirements
+        context_str = ""
+        if history and len(history) > 0:
+            context_str = "Conversation Context:\n"
+            for msg in history:
+                role = "User" if not msg.get("isBot") else f"Assistant (Cloudy AI)"
+                context_str += f"- {role}: {msg.get('text')}\n"
+            context_str += "\nNew requirement based on history:\n"
+
+        full_user_prompt = f"{context_str}Design a highly available and cost-optimized {platform} architecture for: {prompt}"
+
         system_prompt = (
             f"You are an expert cloud architect specialized in {platform}. Your task is to design a cost-optimized, "
-            f"highly available cloud architecture on {platform} based on the user's request. You must output ONLY a valid "
+            f"highly available cloud architecture on {platform} based on the user's request and conversation context. You must output ONLY a valid "
             "JSON object containing 'nodes', 'edges', and 'cost' details. Do not include any explanations, markdown code blocks, "
             "or text outside the JSON.\n\n"
             "Layout Rules (CRITICAL to prevent overlap and make it readable):\n"
@@ -53,7 +64,7 @@ class GeminiService:
 
         payload = {
             "contents": [{
-                "parts": [{"text": f"Design a highly available and cost-optimized {platform} architecture for: {prompt}"}]
+                "parts": [{"text": full_user_prompt}]
             }],
             "systemInstruction": {
                 "parts": [{"text": system_prompt}]
@@ -77,7 +88,8 @@ class GeminiService:
                     headers={'Content-Type': 'application/json'},
                     method='POST'
                 )
-                with urllib.request.urlopen(req) as response:
+                # Set a strict 8-second timeout to prevent API Gateway timeouts
+                with urllib.request.urlopen(req, timeout=8) as response:
                     res_body = response.read().decode('utf-8')
                     res_json = json.loads(res_body)
                     
@@ -92,6 +104,69 @@ class GeminiService:
                 last_error = f"Model {model} failed: {str(e)}"
 
         return {"error": f"Failed to generate architecture after trying all available Gemini models. Last error: {last_error}"}
+
+    def generate_chat_response(self, user_message: str, history: list, platform: str = "AWS"):
+        if not self.api_key:
+            return {"error": "GEMINI_API_KEY is not set. Please set the GEMINI_API_KEY environment variable."}
+
+        # Build context from previous conversation history
+        history_str = ""
+        if history:
+            for msg in history:
+                role = "Cloudy AI" if msg.get("isBot") else "User"
+                history_str += f"{role}: {msg.get('text')}\n"
+
+        system_prompt = (
+            f"You are Cloudy AI, a helpful, enthusiastic, and expert cloud architect assistant specialized in {platform}.\n"
+            "The user is designing a cloud application. Your role is to have a natural, professional conversation to understand "
+            "their needs and help them refine their architecture before they click the generate button.\n\n"
+            "Rules:\n"
+            "1. Be friendly, conversational, and highly technical.\n"
+            "2. Keep your response brief and to the point (maximum 2-3 sentences).\n"
+            "3. Ask exactly ONE relevant, smart, open-ended question that helps clarify their architecture (e.g. data volumes, regional needs, user load, security, real-time versus batch processing, IoT ingest speed, etc.).\n"
+            "4. Match your question specifically to what they just proposed. Do not use generic questions.\n"
+            "5. Do NOT output any JSON, YAML, code blocks, or diagram structures. Focus purely on technical chat."
+        )
+
+        payload = {
+            "contents": [{
+                "parts": [{"text": f"Conversation history:\n{history_str}User: {user_message}\n\nGenerate your technical conversational response and single clarifying question:"}]
+            }],
+            "systemInstruction": {
+                "parts": [{"text": system_prompt}]
+            }
+        }
+
+        # Multi-model fallback list to handle temporary high demand (503s) of preview/new models
+        models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"]
+        last_error = None
+
+        for model in models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
+            try:
+                print(f"Attempting to generate chat response using model: {model}...")
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode('utf-8'),
+                    headers={'Content-Type': 'application/json'},
+                    method='POST'
+                )
+                # Set a strict 6-second timeout to prevent API Gateway timeouts
+                with urllib.request.urlopen(req, timeout=6) as response:
+                    res_body = response.read().decode('utf-8')
+                    res_json = json.loads(res_body)
+                    
+                    text_response = res_json['candidates'][0]['content']['parts'][0]['text']
+                    return {"reply": text_response.strip()}
+            except urllib.error.HTTPError as e:
+                error_msg = e.read().decode('utf-8')
+                print(f"Model {model} failed with HTTP Error {e.code}: {error_msg}")
+                last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
+            except Exception as e:
+                print(f"Model {model} failed with general error: {e}")
+                last_error = f"Model {model} failed: {str(e)}"
+
+        return {"reply": f"I had a transient connection issue. Could you please reiterate your request regarding your {platform} application?"}
 
     def analyse_architecture(self, architecture_data: str):
         if not self.api_key:
@@ -143,7 +218,7 @@ class GeminiService:
                     headers={'Content-Type': 'application/json'},
                     method='POST'
                 )
-                with urllib.request.urlopen(req) as response:
+                with urllib.request.urlopen(req, timeout=8) as response:
                     res_body = response.read().decode('utf-8')
                     res_json = json.loads(res_body)
                     

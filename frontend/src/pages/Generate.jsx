@@ -13,11 +13,11 @@ const Generate = () => {
   const [generatedData, setGeneratedData] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleGenerate = async (prompt, platform) => {
+  const handleGenerate = async (prompt, platform, history) => {
     setIsGenerating(true);
     setError(null);
     try {
-      const response = await api.post('/generate/architecture', { prompt, platform });
+      const response = await api.post('/generate/architecture', { prompt, platform, history });
       if (response.data && response.data.status === 'success') {
         setGeneratedData(response.data);
         setHasGenerated(true);
