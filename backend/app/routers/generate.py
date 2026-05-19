@@ -11,7 +11,7 @@ class GenerateRequest(BaseModel):
 @router.post("/architecture")
 def generate_architecture(req: GenerateRequest):
     gemini_service = GeminiService()
-    result = gemini_service.generate_architecture(req.prompt)
+    result = gemini_service.generate_architecture(req.prompt, req.platform)
     
     if "error" in result:
         return {
@@ -24,7 +24,8 @@ def generate_architecture(req: GenerateRequest):
         "status": "success",
         "platform": req.platform,
         "nodes": result.get("nodes", []),
-        "edges": result.get("edges", [])
+        "edges": result.get("edges", []),
+        "cost": result.get("cost", {})
     }
 
 @router.get("/history")
