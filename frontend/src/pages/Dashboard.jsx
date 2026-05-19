@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import PageWrapper from '../components/layout/PageWrapper';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
-import { Database, Search, Wand2, Activity, Sparkles } from 'lucide-react';
+import { Database, Search, Wand2, Activity, Sparkles, Pencil, Check, X } from 'lucide-react';
 import { getHistoryItems } from '../utils/history';
 import { Link } from 'react-router-dom';
 
@@ -24,13 +24,22 @@ const StatCard = ({ title, value, icon: Icon, delay }) => (
 );
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [history, setHistory] = useState([]);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newNameInput, setNewNameInput] = useState('');
 
   useEffect(() => {
     // Dynamic history metrics derived directly from local storage histories
     setHistory(getHistoryItems());
   }, []);
+
+  const handleSaveName = (e) => {
+    e.preventDefault();
+    if (!newNameInput.trim()) return;
+    updateProfile(newNameInput.trim());
+    setIsEditingName(false);
+  };
 
   const generatedCount = history.filter(h => h.type === 'generated').length;
   const analysedCount = history.filter(h => h.type === 'analysed').length;
@@ -39,7 +48,50 @@ const Dashboard = () => {
   return (
     <PageWrapper>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Welcome back, {user?.name || 'Cloud Architect'}</h1>
+        {isEditingName ? (
+          <form onSubmit={handleSaveName} className="flex items-center gap-2 max-w-lg mb-2">
+            <input
+              type="text"
+              value={newNameInput}
+              onChange={(e) => setNewNameInput(e.target.value)}
+              className="bg-slate-900 border border-slate-700 text-white rounded-xl px-4 py-2 text-2xl font-bold focus:outline-none focus:border-indigo-500 shadow-inner flex-1"
+              autoFocus
+              maxLength={40}
+              placeholder="User or Company Name"
+            />
+            <button 
+              type="submit" 
+              className="p-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition-all shadow-md flex items-center justify-center"
+              title="Save Name"
+            >
+              <Check className="w-5 h-5" />
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setIsEditingName(false)}
+              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-all flex items-center justify-center"
+              title="Cancel"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </form>
+        ) : (
+          <div className="flex items-center gap-2.5 group">
+            <h1 className="text-3xl font-bold text-white mb-1">
+              Welcome back, {user?.name || 'Cloud Architect'}
+            </h1>
+            <button 
+              onClick={() => {
+                setNewNameInput(user?.name || '');
+                setIsEditingName(true);
+              }}
+              className="p-1.5 bg-slate-800/60 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors border border-slate-700/50 mb-1 opacity-60 group-hover:opacity-100"
+              title="Edit User / Company Name"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         <p className="text-slate-400">Here's what's happening with your cloud architectures.</p>
       </div>
 
