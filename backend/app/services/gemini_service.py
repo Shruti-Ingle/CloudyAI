@@ -103,9 +103,8 @@ class GeminiService:
                     error_msg = e.read().decode('utf-8')
                     print(f"Model {model} with key failed: HTTP Error {e.code}: {error_msg}")
                     last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
-                    # If this key is rate limited, let the inner loop switch to the next key!
-                    if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "resource_exhausted" in error_msg.lower():
-                        continue
+                    # Self-healing API key ring: seamlessly rotate to next key on ANY api key error (invalid, rate-limit, etc.)
+                    continue
                 except Exception as e:
                     print(f"Model {model} with key failed with general error: {e}")
                     last_error = f"Model {model} failed: {str(e)}"
@@ -170,9 +169,8 @@ class GeminiService:
                     error_msg = e.read().decode('utf-8')
                     print(f"Model {model} chat failed with HTTP Error {e.code}: {error_msg}")
                     last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
-                    # If this key is rate limited, let the inner loop switch to the next key!
-                    if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "resource_exhausted" in error_msg.lower():
-                        continue
+                    # Self-healing API key ring: seamlessly rotate to next key on ANY api key error (invalid, rate-limit, etc.)
+                    continue
                 except Exception as e:
                     print(f"Model {model} chat failed with general error: {e}")
                     last_error = f"Model {model} failed: {str(e)}"
@@ -240,9 +238,8 @@ class GeminiService:
                     error_msg = e.read().decode('utf-8')
                     print(f"Model {model} analysis failed with HTTP Error {e.code}: {error_msg}")
                     last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
-                    # If this key is rate limited, let the inner loop switch to the next key!
-                    if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "resource_exhausted" in error_msg.lower():
-                        continue
+                    # Self-healing API key ring: seamlessly rotate to next key on ANY api key error (invalid, rate-limit, etc.)
+                    continue
                 except Exception as e:
                     print(f"Model {model} analysis failed with general error: {e}")
                     last_error = f"Model {model} failed: {str(e)}"
