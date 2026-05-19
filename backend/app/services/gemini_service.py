@@ -5,11 +5,14 @@ import urllib.error
 
 class GeminiService:
     def __init__(self):
-        # We read GEMINI_API_KEY from environment variables
-        self.api_key = os.environ.get("GEMINI_API_KEY")
+        # We read GEMINI_API_KEY from environment variables.
+        # It supports a single key or a list of multiple keys separated by commas!
+        raw_keys = os.environ.get("GEMINI_API_KEY", "")
+        self.api_keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
+        self.api_key = self.api_keys[0] if self.api_keys else None
 
     def generate_architecture(self, prompt: str, platform: str = "AWS", history: list = None):
-        if not self.api_key:
+        if not self.api_keys:
             return {"error": "GEMINI_API_KEY is not set. Please set the GEMINI_API_KEY environment variable."}
 
         # If conversation history is provided, build a contextual prompt combining user requirements
@@ -79,36 +82,38 @@ class GeminiService:
         last_error = None
 
         for model in models:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
-            try:
-                print(f"Attempting to generate architecture using model: {model}...")
-                req = urllib.request.Request(
-                    url,
-                    data=json.dumps(payload).encode('utf-8'),
-                    headers={'Content-Type': 'application/json'},
-                    method='POST'
-                )
-                # Set a strict 8-second timeout to prevent API Gateway timeouts
-                with urllib.request.urlopen(req, timeout=8) as response:
-                    res_body = response.read().decode('utf-8')
-                    res_json = json.loads(res_body)
-                    
-                    text_response = res_json['candidates'][0]['content']['parts'][0]['text']
-                    return json.loads(text_response.strip())
-            except urllib.error.HTTPError as e:
-                error_msg = e.read().decode('utf-8')
-                print(f"Model {model} failed with HTTP Error {e.code}: {error_msg}")
-                last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
-                if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "resource_exhausted" in error_msg.lower():
-                    return {"error": "Google Gemini free-tier rate limit exceeded. Please wait 10-15 seconds and try generating again!"}
-            except Exception as e:
-                print(f"Model {model} failed with general error: {e}")
-                last_error = f"Model {model} failed: {str(e)}"
+            for api_key in self.api_keys:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+                try:
+                    print(f"Attempting to generate architecture using model: {model} with rotating API keys...")
+                    req = urllib.request.Request(
+                        url,
+                        data=json.dumps(payload).encode('utf-8'),
+                        headers={'Content-Type': 'application/json'},
+                        method='POST'
+                    )
+                    # Set a strict 8-second timeout to prevent API Gateway timeouts
+                    with urllib.request.urlopen(req, timeout=8) as response:
+                        res_body = response.read().decode('utf-8')
+                        res_json = json.loads(res_body)
+                        
+                        text_response = res_json['candidates'][0]['content']['parts'][0]['text']
+                        return json.loads(text_response.strip())
+                except urllib.error.HTTPError as e:
+                    error_msg = e.read().decode('utf-8')
+                    print(f"Model {model} with key failed: HTTP Error {e.code}: {error_msg}")
+                    last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
+                    # If this key is rate limited, let the inner loop switch to the next key!
+                    if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "resource_exhausted" in error_msg.lower():
+                        continue
+                except Exception as e:
+                    print(f"Model {model} with key failed with general error: {e}")
+                    last_error = f"Model {model} failed: {str(e)}"
 
-        return {"error": f"Failed to generate architecture after trying all available Gemini models. Last error: {last_error}"}
+        return {"error": f"Failed to generate architecture after trying all available Gemini models and API key rings. Last error: {last_error}"}
 
     def generate_chat_response(self, user_message: str, history: list, platform: str = "AWS"):
-        if not self.api_key:
+        if not self.api_keys:
             return {"error": "GEMINI_API_KEY is not set. Please set the GEMINI_API_KEY environment variable."}
 
         # Build context from previous conversation history
@@ -144,36 +149,38 @@ class GeminiService:
         last_error = None
 
         for model in models:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
-            try:
-                print(f"Attempting to generate chat response using model: {model}...")
-                req = urllib.request.Request(
-                    url,
-                    data=json.dumps(payload).encode('utf-8'),
-                    headers={'Content-Type': 'application/json'},
-                    method='POST'
-                )
-                # Set a strict 6-second timeout to prevent API Gateway timeouts
-                with urllib.request.urlopen(req, timeout=6) as response:
-                    res_body = response.read().decode('utf-8')
-                    res_json = json.loads(res_body)
-                    
-                    text_response = res_json['candidates'][0]['content']['parts'][0]['text']
-                    return {"reply": text_response.strip()}
-            except urllib.error.HTTPError as e:
-                error_msg = e.read().decode('utf-8')
-                print(f"Model {model} failed with HTTP Error {e.code}: {error_msg}")
-                last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
-                if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "resource_exhausted" in error_msg.lower():
-                    return {"reply": "I am temporarily experiencing high demand from Google's free-tier rate limits. Please wait 10-15 seconds and resend your message!"}
-            except Exception as e:
-                print(f"Model {model} failed with general error: {e}")
-                last_error = f"Model {model} failed: {str(e)}"
+            for api_key in self.api_keys:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+                try:
+                    print(f"Attempting to generate chat response using model: {model} with rotating API keys...")
+                    req = urllib.request.Request(
+                        url,
+                        data=json.dumps(payload).encode('utf-8'),
+                        headers={'Content-Type': 'application/json'},
+                        method='POST'
+                    )
+                    # Set a strict 6-second timeout to prevent API Gateway timeouts
+                    with urllib.request.urlopen(req, timeout=6) as response:
+                        res_body = response.read().decode('utf-8')
+                        res_json = json.loads(res_body)
+                        
+                        text_response = res_json['candidates'][0]['content']['parts'][0]['text']
+                        return {"reply": text_response.strip()}
+                except urllib.error.HTTPError as e:
+                    error_msg = e.read().decode('utf-8')
+                    print(f"Model {model} chat failed with HTTP Error {e.code}: {error_msg}")
+                    last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
+                    # If this key is rate limited, let the inner loop switch to the next key!
+                    if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "resource_exhausted" in error_msg.lower():
+                        continue
+                except Exception as e:
+                    print(f"Model {model} chat failed with general error: {e}")
+                    last_error = f"Model {model} failed: {str(e)}"
 
-        return {"reply": f"I had a transient connection issue. Could you please reiterate your request regarding your {platform} application?"}
+        return {"reply": "I am temporarily experiencing high demand from Google's free-tier rate limits. Please wait 10-15 seconds and resend your message!"}
 
     def analyse_architecture(self, architecture_data: str):
-        if not self.api_key:
+        if not self.api_keys:
             return {"error": "GEMINI_API_KEY is not set. Please set the GEMINI_API_KEY environment variable."}
 
         system_prompt = (
@@ -213,27 +220,31 @@ class GeminiService:
         last_error = None
 
         for model in models:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
-            try:
-                print(f"Attempting to analyze architecture using model: {model}...")
-                req = urllib.request.Request(
-                    url,
-                    data=json.dumps(payload).encode('utf-8'),
-                    headers={'Content-Type': 'application/json'},
-                    method='POST'
-                )
-                with urllib.request.urlopen(req, timeout=8) as response:
-                    res_body = response.read().decode('utf-8')
-                    res_json = json.loads(res_body)
-                    
-                    text_response = res_json['candidates'][0]['content']['parts'][0]['text']
-                    return json.loads(text_response.strip())
-            except urllib.error.HTTPError as e:
-                error_msg = e.read().decode('utf-8')
-                print(f"Model {model} failed with HTTP Error {e.code}: {error_msg}")
-                last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
-            except Exception as e:
-                print(f"Model {model} failed with general error: {e}")
-                last_error = f"Model {model} failed: {str(e)}"
+            for api_key in self.api_keys:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+                try:
+                    print(f"Attempting to analyze architecture using model: {model} with rotating API keys...")
+                    req = urllib.request.Request(
+                        url,
+                        data=json.dumps(payload).encode('utf-8'),
+                        headers={'Content-Type': 'application/json'},
+                        method='POST'
+                    )
+                    with urllib.request.urlopen(req, timeout=8) as response:
+                        res_body = response.read().decode('utf-8')
+                        res_json = json.loads(res_body)
+                        
+                        text_response = res_json['candidates'][0]['content']['parts'][0]['text']
+                        return json.loads(text_response.strip())
+                except urllib.error.HTTPError as e:
+                    error_msg = e.read().decode('utf-8')
+                    print(f"Model {model} analysis failed with HTTP Error {e.code}: {error_msg}")
+                    last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
+                    # If this key is rate limited, let the inner loop switch to the next key!
+                    if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "resource_exhausted" in error_msg.lower():
+                        continue
+                except Exception as e:
+                    print(f"Model {model} analysis failed with general error: {e}")
+                    last_error = f"Model {model} failed: {str(e)}"
 
-        return {"error": f"Failed to analyze architecture after trying all available Gemini models. Last error: {last_error}"}
+        return {"error": f"Failed to analyze architecture after trying all available Gemini models and API key rings. Last error: {last_error}"}
