@@ -119,25 +119,82 @@ class SiliconFlowService:
             return {"error": str(e)}
 
     def generate_chat_response(self, user_message: str, history: list, platform: str = "AWS"):
+        # Structured sequence of 10 essential architect questions
+        QUESTIONS = {
+            "AWS": [
+                "What is the expected scale or active user base of your system? (e.g. thousands of monthly active users, or daily peaks, to help us size your resources properly?)",
+                "How would you like to host and deliver your frontend client? (e.g. static S3 + CloudFront CDN for super-fast global delivery, or server-side rendered on AWS Amplify/App Runner?)",
+                "What compute tier fits your backend business logic best? (e.g. Serverless AWS Lambda for zero-idle scaling, containerized Amazon ECS/EKS for constant loads, or EC2 VMs?)",
+                "What kind of database fits your data model? (e.g. Relational Postgres/MySQL via Amazon RDS/Aurora, or high-throughput NoSQL via DynamoDB?)",
+                "How will clients communicate with your backend? (e.g. REST API via Amazon API Gateway, or GraphQL via AWS AppSync?)",
+                "How would you like to handle user registration, logins, and JWT token validation? (e.g. Serverless AWS Cognito user pools, or custom OAuth/Auth0?)",
+                "Does your application require persistent object storage for files, media, or backups? (e.g. Amazon S3 buckets, or shared Elastic File System?)",
+                "Do you need a low-latency caching layer to speed up database read operations? (e.g. ElastiCache Redis/Memcached, or standard DB read replicas?)",
+                "What level of network security do you require? (e.g. placing resources in private subnets, enabling AWS WAF firewall, or KMS key encryption?)",
+                "How do you plan to manage deployment and Infrastructure as Code? (e.g. Terraform, AWS CloudFormation/CDK, or standard GitHub Actions pipelines?)"
+            ],
+            "GCP": [
+                "What is the expected scale or active user base of your system? (e.g. thousands of monthly active users, or daily peaks, to help us size your resources properly?)",
+                "How would you like to host and deliver your frontend client? (e.g. Firebase Hosting + Cloud CDN, or server-side rendered on Cloud Run?)",
+                "What compute tier fits your backend business logic best? (e.g. Serverless Cloud Run / Cloud Functions, containerized Google Kubernetes Engine (GKE), or Compute Engine VMs?)",
+                "What kind of database fits your data model? (e.g. Relational Postgres/MySQL via Cloud SQL/Spanner, or high-throughput NoSQL via Firestore/Bigtable?)",
+                "How will clients communicate with your backend? (e.g. Google Cloud API Gateway, or direct Cloud Run URLs?)",
+                "How would you like to handle user registration, logins, and JWT token validation? (e.g. Google Identity Platform / Firebase Auth, or custom OAuth?)",
+                "Does your application require persistent object storage for files, media, or backups? (e.g. Cloud Storage buckets?)",
+                "Do you need a low-latency caching layer to speed up database read operations? (e.g. Memorystore Redis/Memcached?)",
+                "What level of network security do you require? (e.g. Cloud Armor WAF firewall, VPC Service Controls, or Cloud KMS encryption?)",
+                "How do you plan to manage deployment and Infrastructure as Code? (e.g. Terraform, Cloud Build, or standard GitHub Actions?)"
+            ],
+            "Azure": [
+                "What is the expected scale or active user base of your system? (e.g. thousands of monthly active users, or daily peaks, to help us size your resources properly?)",
+                "How would you like to host and deliver your frontend client? (e.g. Azure Static Web Apps + Front Door CDN, or App Service?)",
+                "What compute tier fits your backend business logic best? (e.g. Serverless Azure Functions, containerized Azure Container Apps / Azure Kubernetes Service (AKS), or App Service?)",
+                "What kind of database fits your data model? (e.g. Relational Azure SQL / Database for PostgreSQL, or high-throughput NoSQL via Cosmos DB?)",
+                "How will clients communicate with your backend? (e.g. Azure API Management (APIM), or Application Gateway?)",
+                "How would you like to handle user registration, logins, and JWT token validation? (e.g. Microsoft Entra ID / B2C, or custom OAuth?)",
+                "Does your application require persistent object storage for files, media, or backups? (e.g. Azure Blob Storage?)",
+                "Do you need a low-latency caching layer to speed up database read operations? (e.g. Azure Cache for Redis?)",
+                "What level of network security do you require? (e.g. Azure WAF firewall, Key Vault, or private endpoints?)",
+                "How do you plan to manage deployment and Infrastructure as Code? (e.g. Terraform, Azure Bicep/ARM, or Azure Pipelines/GitHub Actions?)"
+            ]
+        }
+
+        # Retrieve questions list for selected platform, fallback to AWS
+        questions_list = QUESTIONS.get(platform, QUESTIONS["AWS"])
+        num_user_messages = sum(1 for msg in history if not msg.get("isBot")) if history else 0
+
+        # Build context from previous conversation history
         history_str = ""
         if history:
             for msg in history:
                 role = "Cloudy AI" if msg.get("isBot") else "User"
                 history_str += f"{role}: {msg.get('text')}\n"
 
-        system_prompt = (
-            f"You are Cloudy AI, a helpful, enthusiastic, and expert cloud architect assistant specialized in {platform}.\n"
-            "The user is designing a cloud application. Your role is to have a natural, professional conversation to understand "
-            "their needs and help them refine their architecture before they click the generate button.\n\n"
-            "Rules:\n"
-            "1. Be friendly, conversational, and highly technical.\n"
-            "2. Keep your response brief and to the point (maximum 2-3 sentences).\n"
-            "3. Ask exactly ONE relevant, smart, open-ended question that helps clarify their architecture.\n"
-            "4. Match your question specifically to what they just proposed. If the user is off-topic, guide them back on track.\n"
-            "5. Do NOT output any JSON, YAML, code blocks, or diagram structures."
-        )
-
-        prompt = f"Conversation history:\n{history_str}User: {user_message}\n\nGenerate your technical conversational response:"
+        if num_user_messages < len(questions_list):
+            current_question = questions_list[num_user_messages]
+            system_prompt = (
+                f"You are Cloudy AI, a helpful, enthusiastic, and expert cloud architect assistant specialized in {platform}.\n"
+                "The user is designing a cloud application. Your role is to have a natural, professional conversation to understand "
+                "their needs and help them refine their architecture.\n\n"
+                "Rules:\n"
+                "1. Be friendly, conversational, and highly technical.\n"
+                "2. Keep your response brief and to the point (maximum 2 sentences).\n"
+                "3. Intelligently acknowledge the user's latest choice/message with expert technical insight.\n"
+                f"4. At the end of your response, ask this EXACT question: '{current_question}'\n"
+                "5. Do NOT ask any other questions. Do NOT output any JSON, YAML, code blocks, or diagram structures."
+            )
+            prompt = f"Conversation history:\n{history_str}User: {user_message}\n\nInstruction: Acknowledge user's input with brief tech insights, and then ask Question #{num_user_messages + 1}: '{current_question}'\n\nGenerate your technical response:"
+        else:
+            system_prompt = (
+                f"You are Cloudy AI, a helpful, enthusiastic, and expert cloud architect assistant specialized in {platform}.\n"
+                "The user is designing a cloud application.\n\n"
+                "Rules:\n"
+                "1. Be friendly, conversational, and highly technical.\n"
+                "2. Keep your response brief and to the point (maximum 2 sentences).\n"
+                "3. Let the user know that you have gathered all standard architectural inputs. Suggest that they can mention any additional requirements, or click the 'Generate Architecture' button below to create their design.\n"
+                "4. Do NOT ask any new questions. Do NOT output any JSON, YAML, code blocks, or diagram structures."
+            )
+            prompt = f"Conversation history:\n{history_str}User: {user_message}\n\nInstruction: Acknowledge user's input, let them know onboarding is complete, and suggest they click 'Generate Architecture' or mention additional requests.\n\nGenerate your technical response:"
 
         try:
             res_text = self._call_siliconflow(
@@ -148,6 +205,7 @@ class SiliconFlowService:
         except Exception as e:
             print(f"SiliconFlow chat failed: {e}")
             return {"reply": "I encountered a minor connection issue. Tell me more about your requirements or click Generate Architecture whenever you are ready!"}
+
 
     def analyse_architecture(self, architecture_data: str):
         system_prompt = (
