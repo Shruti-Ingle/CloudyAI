@@ -17,6 +17,26 @@ class ChatRequest(BaseModel):
 
 @router.post("/architecture")
 def generate_architecture(req: GenerateRequest):
+    # Try OpenRouter first if an OpenRouter or Ollama key is available!
+    try:
+        from app.services.openrouter_service import OpenRouterService
+        openrouter_service = OpenRouterService()
+        # Only run if key is present (either explicitly set or default fallback exists)
+        if openrouter_service.api_key:
+            print("Attempting to generate architecture using OpenRouter (DeepSeek V3)...")
+            result = openrouter_service.generate_architecture(req.prompt, req.platform, req.history)
+            if "error" not in result:
+                return {
+                    "status": "success",
+                    "platform": req.platform,
+                    "nodes": result.get("nodes", []),
+                    "edges": result.get("edges", []),
+                    "cost": result.get("cost", {})
+                }
+            print(f"OpenRouter generation returned error: {result['error']}. Falling back to Gemini...")
+    except Exception as e:
+        print(f"OpenRouter generation failed with exception: {e}. Falling back to Gemini...")
+
     gemini_service = GeminiService()
     result = gemini_service.generate_architecture(req.prompt, req.platform, req.history)
     
@@ -63,6 +83,23 @@ def generate_architecture(req: GenerateRequest):
 
 @router.post("/chat")
 def chat_with_assistant(req: ChatRequest):
+    # Try OpenRouter first if an OpenRouter or Ollama key is available!
+    try:
+        from app.services.openrouter_service import OpenRouterService
+        openrouter_service = OpenRouterService()
+        if openrouter_service.api_key:
+            print("Attempting chat completion using OpenRouter...")
+            result = openrouter_service.generate_chat_response(req.message, req.history, req.platform)
+            # Check if it succeeded and didn't fall back to generic error reply
+            if result and "reply" in result and "minor connection issue" not in result["reply"]:
+                return {
+                    "status": "success",
+                    "reply": result["reply"]
+                }
+            print("OpenRouter chat returned connection error. Falling back to Gemini...")
+    except Exception as e:
+        print(f"OpenRouter chat failed with exception: {e}. Falling back to Gemini...")
+
     gemini_service = GeminiService()
     result = gemini_service.generate_chat_response(req.message, req.history, req.platform)
     
