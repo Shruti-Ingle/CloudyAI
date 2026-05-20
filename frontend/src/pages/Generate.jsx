@@ -5,8 +5,9 @@ import FlowDiagram from '../components/architecture/FlowDiagram';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import { AlertCircle, ShieldAlert, ShieldCheck, HelpCircle, ArrowRight, Activity, Zap } from 'lucide-react';
-
 import { saveHistoryItem } from '../utils/history';
+import { generateLocalArchitecture } from '../utils/localOllama';
+
 
 const Generate = () => {
   const [hasGenerated, setHasGenerated] = useState(false);
@@ -95,9 +96,33 @@ const Generate = () => {
     setIsGenerating(true);
     setError(null);
     try {
-      const response = await api.post('/generate/architecture', { prompt, platform, history });
-      if (response.data && response.data.status === 'success') {
-        const architecture = response.data;
+      // Retrieve direct browser routing settings
+      let settings = { routingMode: 'cloud' };
+      try {
+        const saved = localStorage.getItem('clouddaddy_settings');
+        if (saved) settings = JSON.parse(saved);
+      } catch (e) {
+        console.warn("Could not read local settings", e);
+      }
+
+      let architecture;
+
+      if (settings.routingMode === 'local') {
+        const response = await generateLocalArchitecture({
+          url: settings.localUrl,
+          apiKey: settings.localApiKey,
+          model: settings.localModel,
+          prompt,
+          platform,
+          history
+        });
+        architecture = response;
+      } else {
+        const response = await api.post('/generate/architecture', { prompt, platform, history });
+        architecture = response.data;
+      }
+
+      if (architecture && architecture.status === 'success') {
         setGeneratedData(architecture);
         setNodes(architecture.nodes || []);
         setEdges(architecture.edges || []);
@@ -116,7 +141,7 @@ const Generate = () => {
           cost: initialCost.total_monthly_cost || '$0.00'
         });
       } else {
-        setError(response.data?.message || 'Failed to generate architecture');
+        setError(architecture?.message || 'Failed to generate architecture');
       }
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Connection error to the backend');

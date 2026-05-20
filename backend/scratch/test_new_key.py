@@ -1,11 +1,11 @@
 import urllib.request
 import json
 
-raw_key = "e8c955b188ca4d95808f1168b0283b4f.iETov7wv3lyf9IXV49xDihwT"
+new_key = "e8c955b188ca4d95808f1168b0283b4f.iETov7wv3lyf9IXV49xDihwT"
 
 keys = [
-    raw_key,
-    f"sk-{raw_key}"
+    new_key,
+    f"sk-{new_key}"
 ]
 
 endpoints = [
@@ -27,8 +27,5 @@ for key in keys:
             with urllib.request.urlopen(req, timeout=5) as response:
                 res = response.read().decode('utf-8')
                 print(f"Success on {name} with key {key[:10]}: {res[:150]}")
-                exit(0)
         except Exception as e:
-            pass
-
-print("All simple GET info checks failed.")
+            print(f"Failed on {name} with key {key[:10]}: {e}")

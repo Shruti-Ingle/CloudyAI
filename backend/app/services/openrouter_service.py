@@ -9,7 +9,7 @@ class OpenRouterService:
         self.api_key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OLLAMA_API_KEY")
         if not self.api_key:
             # Fallback to the exact key provided by the user
-            self.api_key = "ae9185cb5675464b9566360907995454.5XQlA7RzVKZ0-_xHp5Ttj_-c"
+            self.api_key = "e8c955b188ca4d95808f1168b0283b4f.iETov7wv3lyf9IXV49xDihwT"
         
         self.base_url = "https://openrouter.ai/api/v1/chat/completions"
         # We use deepseek-chat (DeepSeek V3) or Google Gemini Flash via OpenRouter for smart, compliant completions!
@@ -119,7 +119,7 @@ class OpenRouterService:
             print(f"OpenRouter generate architecture failed: {e}")
             return {"error": str(e)}
 
-    def generate_chat_response(self, user_message: str, history: list, platform: str = "AWS"):
+    def generate_chat_response(self, user_message: str, history: list, platform: str = "AWS", question_index: int = None):
         # Structured sequence of 10 essential architect questions
         QUESTIONS = {
             "AWS": [
@@ -162,7 +162,12 @@ class OpenRouterService:
 
         # Retrieve questions list for selected platform, fallback to AWS
         questions_list = QUESTIONS.get(platform, QUESTIONS["AWS"])
-        num_user_messages = sum(1 for msg in history if not msg.get("isBot")) if history else 0
+        
+        # Override calculation if question_index is explicitly provided from frontend
+        if question_index is not None:
+            num_user_messages = question_index
+        else:
+            num_user_messages = sum(1 for msg in history if not msg.get("isBot")) if history else 0
 
         # Build context from previous conversation history
         history_str = ""

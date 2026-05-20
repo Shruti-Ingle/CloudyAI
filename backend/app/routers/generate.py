@@ -14,14 +14,32 @@ class ChatRequest(BaseModel):
     message: str
     history: Optional[List[Dict]] = None
     platform: str = "AWS"
+    question_index: Optional[int] = None
 
 @router.post("/architecture")
 def generate_architecture(req: GenerateRequest):
-    # Try OpenRouter first if an OpenRouter or Ollama key is available!
+    # 1. Try Ollama first!
+    try:
+        from app.services.ollama_service import OllamaService
+        ollama_service = OllamaService()
+        print("Attempting to generate architecture using Ollama...")
+        result = ollama_service.generate_architecture(req.prompt, req.platform, req.history)
+        if "error" not in result:
+            return {
+                "status": "success",
+                "platform": req.platform,
+                "nodes": result.get("nodes", []),
+                "edges": result.get("edges", []),
+                "cost": result.get("cost", {})
+            }
+        print(f"Ollama generation returned error: {result['error']}. Falling back to OpenRouter...")
+    except Exception as e:
+        print(f"Ollama generation failed with exception: {e}. Falling back to OpenRouter...")
+
+    # 2. Try OpenRouter second
     try:
         from app.services.openrouter_service import OpenRouterService
         openrouter_service = OpenRouterService()
-        # Only run if key is present (either explicitly set or default fallback exists)
         if openrouter_service.api_key:
             print("Attempting to generate architecture using OpenRouter (DeepSeek V3)...")
             result = openrouter_service.generate_architecture(req.prompt, req.platform, req.history)
@@ -33,10 +51,30 @@ def generate_architecture(req: GenerateRequest):
                     "edges": result.get("edges", []),
                     "cost": result.get("cost", {})
                 }
-            print(f"OpenRouter generation returned error: {result['error']}. Falling back to Gemini...")
+            print(f"OpenRouter generation returned error: {result['error']}. Falling back to SiliconFlow...")
     except Exception as e:
-        print(f"OpenRouter generation failed with exception: {e}. Falling back to Gemini...")
+        print(f"OpenRouter generation failed with exception: {e}. Falling back to SiliconFlow...")
 
+    # 3. Try SiliconFlow third
+    try:
+        from app.services.siliconflow_service import SiliconFlowService
+        siliconflow_service = SiliconFlowService()
+        if siliconflow_service.api_key:
+            print("Attempting to generate architecture using SiliconFlow...")
+            result = siliconflow_service.generate_architecture(req.prompt, req.platform, req.history)
+            if "error" not in result:
+                return {
+                    "status": "success",
+                    "platform": req.platform,
+                    "nodes": result.get("nodes", []),
+                    "edges": result.get("edges", []),
+                    "cost": result.get("cost", {})
+                }
+            print(f"SiliconFlow generation returned error: {result['error']}. Falling back to Gemini...")
+    except Exception as e:
+        print(f"SiliconFlow generation failed with exception: {e}. Falling back to Gemini...")
+
+    # 4. Try Gemini (Google) as the final fallback
     gemini_service = GeminiService()
     result = gemini_service.generate_architecture(req.prompt, req.platform, req.history)
     
@@ -83,25 +121,56 @@ def generate_architecture(req: GenerateRequest):
 
 @router.post("/chat")
 def chat_with_assistant(req: ChatRequest):
-    # Try OpenRouter first if an OpenRouter or Ollama key is available!
+    # 1. Try Ollama first!
+    try:
+        from app.services.ollama_service import OllamaService
+        ollama_service = OllamaService()
+        print("Attempting chat completion using Ollama...")
+        result = ollama_service.generate_chat_response(req.message, req.history, req.platform, req.question_index)
+        if result and "reply" in result and "connection issue" not in result["reply"] and "rate limits" not in result["reply"]:
+            return {
+                "status": "success",
+                "reply": result["reply"]
+            }
+        print("Ollama chat returned connection/error reply. Falling back to OpenRouter...")
+    except Exception as e:
+        print(f"Ollama chat failed with exception: {e}. Falling back to OpenRouter...")
+
+    # 2. Try OpenRouter second
     try:
         from app.services.openrouter_service import OpenRouterService
         openrouter_service = OpenRouterService()
         if openrouter_service.api_key:
             print("Attempting chat completion using OpenRouter...")
-            result = openrouter_service.generate_chat_response(req.message, req.history, req.platform)
-            # Check if it succeeded and didn't fall back to generic error reply
-            if result and "reply" in result and "minor connection issue" not in result["reply"]:
+            result = openrouter_service.generate_chat_response(req.message, req.history, req.platform, req.question_index)
+            if result and "reply" in result and "connection issue" not in result["reply"]:
                 return {
                     "status": "success",
                     "reply": result["reply"]
                 }
-            print("OpenRouter chat returned connection error. Falling back to Gemini...")
+            print("OpenRouter chat returned connection error. Falling back to SiliconFlow...")
     except Exception as e:
-        print(f"OpenRouter chat failed with exception: {e}. Falling back to Gemini...")
+        print(f"OpenRouter chat failed with exception: {e}. Falling back to SiliconFlow...")
 
+    # 3. Try SiliconFlow third
+    try:
+        from app.services.siliconflow_service import SiliconFlowService
+        siliconflow_service = SiliconFlowService()
+        if siliconflow_service.api_key:
+            print("Attempting chat completion using SiliconFlow...")
+            result = siliconflow_service.generate_chat_response(req.message, req.history, req.platform, req.question_index)
+            if result and "reply" in result and "connection issue" not in result["reply"]:
+                return {
+                    "status": "success",
+                    "reply": result["reply"]
+                }
+            print("SiliconFlow chat returned connection error. Falling back to Gemini...")
+    except Exception as e:
+        print(f"SiliconFlow chat failed with exception: {e}. Falling back to Gemini...")
+
+    # 4. Try Gemini (Google) as final fallback
     gemini_service = GeminiService()
-    result = gemini_service.generate_chat_response(req.message, req.history, req.platform)
+    result = gemini_service.generate_chat_response(req.message, req.history, req.platform, req.question_index)
     
     reply_text = result.get("reply", "")
     if "quota" in reply_text.lower() or "rate limit" in reply_text.lower():
@@ -137,3 +206,4 @@ def get_history():
     return [
         {"id": 1, "prompt": "E-commerce Backend", "platform": "AWS", "date": "2026-05-18"}
     ]
+

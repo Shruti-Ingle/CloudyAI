@@ -1,7 +1,18 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://9j3oe7izwh.execute-api.eu-west-2.amazonaws.com/Prod';
+const isLocalhost = typeof window !== 'undefined' && (
+  window.location.hostname === 'localhost' || 
+  window.location.hostname === '127.0.0.1' || 
+  window.location.hostname.startsWith('192.168.') || 
+  window.location.hostname.startsWith('10.') ||
+  window.location.hostname.endsWith('.local')
+);
+
+const API_URL = import.meta.env.VITE_API_URL || 
+  (isLocalhost
+    ? `http://${window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname}:8000`
+    : 'https://9j3oe7izwh.execute-api.eu-west-2.amazonaws.com/Prod');
 
 const api = axios.create({
   baseURL: API_URL,

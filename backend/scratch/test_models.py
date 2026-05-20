@@ -1,7 +1,7 @@
 import urllib.request
 import json
 
-raw_key = "ae9185cb5675464b9566360907995454.5XQlA7RzVKZ0-_xHp5Ttj_-c"
+raw_key = "e8c955b188ca4d95808f1168b0283b4f.iETov7wv3lyf9IXV49xDihwT"
 
 keys = [
     raw_key,
