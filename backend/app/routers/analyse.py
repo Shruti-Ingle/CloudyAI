@@ -9,8 +9,12 @@ class AnalyseRequest(BaseModel):
 
 @router.post("/architecture")
 def analyse_architecture(req: AnalyseRequest):
-    gemini_service = GeminiService()
-    result = gemini_service.analyse_architecture(req.architecture_data)
+    try:
+        gemini_service = GeminiService()
+        result = gemini_service.analyse_architecture(req.architecture_data)
+    except Exception as gemini_err:
+        print(f"Gemini analysis failed with exception: {gemini_err}. Trying AWS Bedrock fallback...")
+        result = {"error": f"Gemini analysis failed: {str(gemini_err)}"}
     
     if "error" in result:
         # Try AWS Bedrock as the ultimate self-healing fallback!

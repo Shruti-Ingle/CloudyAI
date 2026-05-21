@@ -75,8 +75,12 @@ def generate_architecture(req: GenerateRequest):
         print(f"SiliconFlow generation failed with exception: {e}. Falling back to Gemini...")
 
     # 4. Try Gemini (Google) as the final fallback
-    gemini_service = GeminiService()
-    result = gemini_service.generate_architecture(req.prompt, req.platform, req.history)
+    try:
+        gemini_service = GeminiService()
+        result = gemini_service.generate_architecture(req.prompt, req.platform, req.history)
+    except Exception as gemini_err:
+        print(f"Gemini generation failed with exception: {gemini_err}. Trying OpenAI/Bedrock fallbacks...")
+        result = {"error": f"Gemini generation failed: {str(gemini_err)}"}
     
     if "error" in result:
         # Automatic OpenAI failover recovery fallback loop if Gemini key hits a rate limit block!
@@ -189,8 +193,12 @@ def chat_with_assistant(req: ChatRequest):
         print(f"SiliconFlow chat failed with exception: {e}. Falling back to Gemini...")
 
     # 4. Try Gemini (Google) as final fallback
-    gemini_service = GeminiService()
-    result = gemini_service.generate_chat_response(req.message, req.history, req.platform, req.question_index)
+    try:
+        gemini_service = GeminiService()
+        result = gemini_service.generate_chat_response(req.message, req.history, req.platform, req.question_index)
+    except Exception as gemini_err:
+        print(f"Gemini chat failed with exception: {gemini_err}. Trying OpenAI fallback...")
+        result = {"reply": f"I am temporarily experiencing high demand (Gemini error: {gemini_err}). Please wait 10-15 seconds and resend your message!"}
     
     reply_text = result.get("reply", "")
     if "quota" in reply_text.lower() or "rate limit" in reply_text.lower():
