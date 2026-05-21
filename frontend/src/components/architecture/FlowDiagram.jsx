@@ -168,15 +168,63 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
   // Update component states on initial generation
   useEffect(() => {
     if (!propNodes || propNodes.length === 0) return;
+
+    // Check if these nodes are already the ones currently displayed in state
+    // to avoid infinite re-render loops and repeated scaling.
+    const currentIds = nodes.map(n => n.id).sort().join(',');
+    const incomingIds = propNodes.map(n => n.id).sort().join(',');
+    
+    if (currentIds === incomingIds && nodes.length > 0) {
+      // If properties or label changed, update them without changing position coordinates
+      let changed = false;
+      const updatedNodes = nodes.map(localNode => {
+        const matchingPropNode = propNodes.find(pn => pn.id === localNode.id);
+        if (matchingPropNode) {
+          const newProps = matchingPropNode.properties || localNode.properties;
+          const newLabel = matchingPropNode.label || matchingPropNode.data?.label || localNode.label;
+          if (JSON.stringify(localNode.properties) !== JSON.stringify(newProps) || localNode.label !== newLabel) {
+            changed = true;
+            return {
+              ...localNode,
+              label: newLabel,
+              properties: newProps,
+              data: {
+                ...localNode.data,
+                label: styleRawNodes([matchingPropNode])[0].data.label
+              }
+            };
+          }
+        }
+        return localNode;
+      });
+      
+      if (changed) {
+        setNodes(updatedNodes);
+      }
+      return;
+    }
+    
+    // Check if the incoming nodes are already styled/initialized (meaning they came from loaded history)
+    const isFromSavedHistory = propNodes.some(n => n.properties !== undefined && n.properties.type !== undefined);
     
     // Scale coordinate spacing multiplier only once on primary load
-    const scaledNodes = propNodes.map(n => ({
-      ...n,
-      position: {
-        x: n.position?.x !== undefined ? n.position.x * 1.5 : Math.random() * 400 + 100,
-        y: n.position?.y !== undefined ? n.position.y * 1.4 : Math.random() * 300 + 100,
+    const scaledNodes = propNodes.map(n => {
+      let x = n.position?.x;
+      let y = n.position?.y;
+      
+      if (x === undefined) x = Math.random() * 400 + 100;
+      if (y === undefined) y = Math.random() * 300 + 100;
+      
+      if (!isFromSavedHistory) {
+        x = x * 1.5;
+        y = y * 1.4;
       }
-    }));
+      
+      return {
+        ...n,
+        position: { x, y }
+      };
+    });
 
     const styledNodes = styleRawNodes(scaledNodes);
     const styledEdges = propEdges.map((edge) => {
@@ -203,7 +251,7 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
 
     setNodes(styledNodes);
     setEdges(styledEdges);
-  }, [propNodes, propEdges, styleRawNodes, setNodes, setEdges]);
+  }, [propNodes, propEdges, styleRawNodes, setNodes, setEdges, nodes]);
 
   // Handle Drag Events
   const onDragStart = (event, nodeType) => {

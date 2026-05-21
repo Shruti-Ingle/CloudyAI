@@ -86,7 +86,7 @@ def generate_architecture(req: GenerateRequest):
                 openai_service = OpenAIService()
                 if openai_service.api_key:
                     print("Gemini rate limited - attempting OpenAI Architecture generation fallback...")
-                    openai_result = openai_service.generate_architecture(req.prompt)
+                    openai_result = openai_service.generate_architecture(req.prompt, req.platform, req.history)
                     if "error" not in openai_result:
                         print("Successfully recovered from Gemini rate limit using OpenAI fallback!")
                         return {
@@ -94,23 +94,17 @@ def generate_architecture(req: GenerateRequest):
                             "platform": req.platform,
                             "nodes": openai_result.get("nodes", []),
                             "edges": openai_result.get("edges", []),
-                            "cost": {
-                                "total_monthly_cost": "$28.50",
-                                "services": [
-                                    {"name": f"{req.platform} Compute Logic", "monthly_cost": "$18.00", "breakdown": "Serverless microservice execution logic"},
-                                    {"name": f"{req.platform} Database Store", "monthly_cost": "$10.50", "breakdown": "Data persistence storage layer"}
-                                ]
-                            }
+                            "cost": openai_result.get("cost", {})
                         }
             except Exception as oai_err:
                 print(f"OpenAI fallback invocation failed: {oai_err}")
-
+ 
         # Try AWS Bedrock as the ultimate bulletproof fallback!
         try:
             print("Gemini generation failed - attempting AWS Bedrock fallback...")
             from app.services.bedrock_service import BedrockService
             bedrock_service = BedrockService()
-            bedrock_result = bedrock_service.generate_architecture(req.prompt)
+            bedrock_result = bedrock_service.generate_architecture(req.prompt, req.platform, req.history)
             if bedrock_result and "error" not in bedrock_result and ("nodes" in bedrock_result or "edges" in bedrock_result):
                 print("Successfully recovered from generation failure using AWS Bedrock fallback!")
                 return {
@@ -118,14 +112,7 @@ def generate_architecture(req: GenerateRequest):
                     "platform": req.platform,
                     "nodes": bedrock_result.get("nodes", []),
                     "edges": bedrock_result.get("edges", []),
-                    "cost": bedrock_result.get("cost", {
-                        "total_monthly_cost": "$15.20",
-                        "services": [
-                            {"name": "API Gateway", "monthly_cost": "$3.50", "breakdown": "Entry gateway endpoints"},
-                            {"name": "AWS Lambda", "monthly_cost": "$0.20", "breakdown": "Serverless compute logic execution"},
-                            {"name": "Amazon DynamoDB", "monthly_cost": "$11.50", "breakdown": "Key-value and document database storage"}
-                        ]
-                    })
+                    "cost": bedrock_result.get("cost", {})
                 }
         except Exception as bedrock_err:
             print(f"AWS Bedrock fallback generation failed: {bedrock_err}")

@@ -1,6 +1,7 @@
 import os
 import json
 from openai import OpenAI
+from app.utils.prompt_builder import get_system_prompt
 
 class OpenAIService:
     def __init__(self):
@@ -11,37 +12,27 @@ class OpenAIService:
         else:
             self.client = None
 
-    def generate_architecture(self, prompt: str):
+    def generate_architecture(self, prompt: str, platform: str = "AWS", history: list = None):
         if not self.client:
             return {"error": "OpenAI API Key is not set. Please set the OPENAI_API_KEY environment variable."}
             
-        system_prompt = (
-            "You are an expert cloud architect. Your task is to design a cost-optimized cloud architecture "
-            "based on the user's request. You must output ONLY a valid JSON object containing 'nodes' and "
-            "'edges' arrays compatible with React Flow. Do not include any explanations, markdown code blocks, "
-            "or text outside the JSON.\n\n"
-            "Example structure:\n"
-            "{\n"
-            "  \"nodes\": [\n"
-            "    {\"id\": \"1\", \"data\": {\"label\": \"React Frontend\"}, \"position\": {\"x\": 250, \"y\": 50}},\n"
-            "    {\"id\": \"2\", \"data\": {\"label\": \"API Gateway\"}, \"position\": {\"x\": 250, \"y\": 150}},\n"
-            "    {\"id\": \"3\", \"data\": {\"label\": \"Lambda Function\"}, \"position\": {\"x\": 250, \"y\": 250}},\n"
-            "    {\"id\": \"4\", \"data\": {\"label\": \"DynamoDB Table\"}, \"position\": {\"x\": 250, \"y\": 350}}\n"
-            "  ],\n"
-            "  \"edges\": [\n"
-            "    {\"id\": \"e1-2\", \"source\": \"1\", \"target\": \"2\"},\n"
-            "    {\"id\": \"e2-3\", \"source\": \"2\", \"target\": \"3\"},\n"
-            "    {\"id\": \"e3-4\", \"source\": \"3\", \"target\": \"4\"}\n"
-            "  ]\n"
-            "}"
-        )
+        context_str = ""
+        if history and len(history) > 0:
+            context_str = "Conversation Context:\n"
+            for msg in history:
+                role = "User" if not msg.get("isBot") else "Assistant (Cloudy AI)"
+                context_str += f"- {role}: {msg.get('text')}\n"
+            context_str += "\nNew requirement based on history:\n"
+
+        full_user_prompt = f"{context_str}Design a highly available and cost-optimized {platform} architecture for: {prompt}"
+        system_prompt = get_system_prompt(platform)
         
         try:
             response = self.client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Design a highly available and cost-optimized architecture for: {prompt}"}
+                    {"role": "user", "content": full_user_prompt}
                 ],
                 response_format={"type": "json_object"}
             )
