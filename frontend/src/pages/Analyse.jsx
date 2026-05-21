@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import PageWrapper from '../components/layout/PageWrapper';
 import UploadInput from '../components/analyser/UploadInput';
 import BreakdownList from '../components/analyser/BreakdownList';
@@ -6,8 +7,10 @@ import ComparisonDiagram from '../components/analyser/ComparisonDiagram';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, AlertCircle } from 'lucide-react';
 import api from '../utils/api';
+import { saveHistoryItem } from '../utils/history';
 
 const Analyse = () => {
+  const location = useLocation();
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [hasAnalysed, setHasAnalysed] = useState(false);
   const [issues, setIssues] = useState([]);
@@ -16,6 +19,17 @@ const Analyse = () => {
   const [beforeEdges, setBeforeEdges] = useState(null);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    if (location.state?.historyItem) {
+      const item = location.state.historyItem;
+      setBeforeNodes(item.beforeNodes || null);
+      setBeforeEdges(item.beforeEdges || null);
+      setAnalysisData(item.rawAnalysis || null);
+      setIssues(item.issues_list || item.rawAnalysis?.issues || []);
+      setHasAnalysed(true);
+    }
+  }, [location.state]);
+
   const handleUpload = async (data) => {
     setIsAnalysing(true);
     setError(null);
@@ -23,11 +37,15 @@ const Analyse = () => {
     setBeforeEdges(null);
     
     try {
+      let parsedNodes = null;
+      let parsedEdges = null;
       let payload = data;
       if (typeof data === 'string') {
         try {
           const parsed = JSON.parse(data);
           if (parsed.nodes && parsed.edges) {
+            parsedNodes = parsed.nodes;
+            parsedEdges = parsed.edges;
             setBeforeNodes(parsed.nodes);
             setBeforeEdges(parsed.edges);
           }
@@ -43,6 +61,18 @@ const Analyse = () => {
         setAnalysisData(response.data);
         setIssues(response.data.issues || []);
         setHasAnalysed(true);
+
+        // Dynamically save user analysis to local storage history
+        saveHistoryItem({
+          type: 'analysed',
+          title: "Custom Architecture Analysis",
+          platform: "AWS",
+          issues: response.data.issues?.length || 0,
+          issues_list: response.data.issues || [],
+          beforeNodes: parsedNodes,
+          beforeEdges: parsedEdges,
+          rawAnalysis: response.data
+        });
       } else {
         setError(response.data?.message || 'Failed to analyse architecture');
       }

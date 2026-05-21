@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import PageWrapper from '../components/layout/PageWrapper';
 import ChatInterface from '../components/cloudy/ChatInterface';
 import FlowDiagram from '../components/architecture/FlowDiagram';
@@ -10,6 +11,7 @@ import { generateLocalArchitecture } from '../utils/localOllama';
 
 
 const Generate = () => {
+  const location = useLocation();
   const [hasGenerated, setHasGenerated] = useState(false);
   const [activeTab, setActiveTab] = useState('diagram');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -92,6 +94,27 @@ const Generate = () => {
     setSecurityIssues(issues);
   };
 
+  useEffect(() => {
+    if (location.state?.historyItem) {
+      const item = location.state.historyItem;
+      setNodes(item.nodes || []);
+      setEdges(item.edges || []);
+      
+      const loadedCost = item.cost_details || { total_monthly_cost: item.cost || '$0.00', services: [] };
+      setCost(loadedCost);
+      runSecurityAudit(item.nodes || [], item.edges || []);
+      
+      setGeneratedData(item.rawArchitecture || {
+        status: 'success',
+        platform: item.platform,
+        nodes: item.nodes || [],
+        edges: item.edges || [],
+        cost: loadedCost
+      });
+      setHasGenerated(true);
+    }
+  }, [location.state]);
+
   const handleGenerate = async (prompt, platform, history) => {
     setIsGenerating(true);
     setError(null);
@@ -138,7 +161,11 @@ const Generate = () => {
           title: prompt,
           platform: platform,
           services: architecture.nodes?.length || 0,
-          cost: initialCost.total_monthly_cost || '$0.00'
+          cost: initialCost.total_monthly_cost || '$0.00',
+          nodes: architecture.nodes || [],
+          edges: architecture.edges || [],
+          cost_details: initialCost,
+          rawArchitecture: architecture
         });
       } else {
         setError(architecture?.message || 'Failed to generate architecture');

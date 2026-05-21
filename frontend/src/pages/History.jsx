@@ -3,11 +3,20 @@ import PageWrapper from '../components/layout/PageWrapper';
 import { motion } from 'framer-motion';
 import { Database, Wand2, Search, ExternalLink, Calendar, Cloud, Sparkles } from 'lucide-react';
 import { getHistoryItems } from '../utils/history';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const History = () => {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
   const [history, setHistory] = useState([]);
+
+  const handleCardClick = (item) => {
+    if (item.type === 'generated') {
+      navigate('/generate', { state: { historyItem: item } });
+    } else {
+      navigate('/analyse', { state: { historyItem: item } });
+    }
+  };
 
   useEffect(() => {
     setHistory(getHistoryItems());
@@ -65,6 +74,7 @@ const History = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
+              onClick={() => handleCardClick(item)}
               className="glass-card rounded-2xl p-6 border border-slate-700/50 hover:border-indigo-500/50 transition-all group cursor-pointer"
             >
               <div className="flex items-start justify-between mb-4">
