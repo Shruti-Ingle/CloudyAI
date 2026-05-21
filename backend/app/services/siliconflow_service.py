@@ -6,11 +6,7 @@ from app.utils.prompt_builder import get_system_prompt
 
 class SiliconFlowService:
     def __init__(self):
-        # Read from environment variables, fallback to the key provided by the user
         self.api_key = os.environ.get("SILICONFLOW_API_KEY")
-        if not self.api_key:
-            # Fallback to the exact key provided by the user (ensuring sk- prefix)
-            self.api_key = "sk-e8c955b188ca4d95808f1168b0283b4f.iETov7wv3lyf9IXV49xDihwT"
         
         self.base_url = "https://api.siliconflow.cn/v1/chat/completions"
         # SiliconFlow hosts deepseek-ai/DeepSeek-V3 and Qwen2.5-72B-Instruct!

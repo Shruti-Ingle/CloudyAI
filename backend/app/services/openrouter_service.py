@@ -6,18 +6,20 @@ from app.utils.prompt_builder import get_system_prompt
 
 class OpenRouterService:
     def __init__(self):
-        # Read from environment variables, fallback to the key provided by the user
+        # Read from environment variable OPENROUTER_API_KEY (set this to your free key from openrouter.ai/settings/keys)
         self.api_key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OLLAMA_API_KEY")
-        if not self.api_key:
-            # Verified working OpenRouter active key fallback
-            self.api_key = "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"
         
         self.base_url = "https://openrouter.ai/api/v1/chat/completions"
-        # We use deepseek-chat (DeepSeek V3) or Google Gemini Flash via OpenRouter for smart, compliant completions!
-        self.primary_model = "deepseek/deepseek-chat"
-        self.fallback_model = "google/gemini-flash-1.5"
+        # Use free-tier models (the :free suffix ensures zero cost on OpenRouter free accounts)
+        # Priority: DeepSeek R1 (free) -> Meta Llama (free) -> Qwen (free)
+        self.primary_model = "deepseek/deepseek-r1:free"
+        self.fallback_model = "meta-llama/llama-3.3-70b-instruct:free"
+        self.tertiary_model = "qwen/qwen3-14b:free"
 
     def _call_openrouter(self, messages, system_prompt=None, require_json=False):
+        if not self.api_key:
+            raise Exception("OPENROUTER_API_KEY is not set. Please set it to your free key from openrouter.ai/settings/keys")
+
         payload_messages = []
         if system_prompt:
             payload_messages.append({"role": "system", "content": system_prompt})
@@ -32,8 +34,8 @@ class OpenRouterService:
         if require_json:
             payload["response_format"] = {"type": "json_object"}
 
-        # Attempt invocation
-        for model in [self.primary_model, self.fallback_model]:
+        # Attempt invocation across all free models
+        for model in [self.primary_model, self.fallback_model, self.tertiary_model]:
             payload["model"] = model
             req = urllib.request.Request(
                 self.base_url,
@@ -47,17 +49,20 @@ class OpenRouterService:
                 method="POST"
             )
             try:
-                with urllib.request.urlopen(req, timeout=12) as response:
+                # Free-tier models can be slower - use a generous timeout
+                with urllib.request.urlopen(req, timeout=20) as response:
                     res_body = response.read().decode('utf-8')
                     res_json = json.loads(res_body)
-                    return res_json['choices'][0]['message']['content'].strip()
+                    content = res_json['choices'][0]['message']['content']
+                    if content:
+                        return content.strip()
             except urllib.error.HTTPError as e:
                 err_data = e.read().decode('utf-8')
                 print(f"OpenRouter model {model} failed with: {err_data}")
             except Exception as e:
                 print(f"OpenRouter call failed for model {model}: {e}")
         
-        raise Exception("Failed to get response from all configured OpenRouter models.")
+        raise Exception("Failed to get response from all configured OpenRouter free models.")
 
     def generate_architecture(self, prompt: str, platform: str = "AWS", history: list = None):
         context_str = ""
