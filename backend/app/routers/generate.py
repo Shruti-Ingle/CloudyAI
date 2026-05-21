@@ -117,9 +117,16 @@ def generate_architecture(req: GenerateRequest):
         except Exception as bedrock_err:
             print(f"AWS Bedrock fallback generation failed: {bedrock_err}")
 
+        err_msg = result.get("error", "Unknown generation error")
+        if "rate limit" in err_msg.lower() or "quota" in err_msg.lower() or "demand" in err_msg.lower():
+            err_msg = (
+                "Failed to generate architecture. Connection to your local Ollama service at http://localhost:11434 failed, "
+                "and all cloud fallback services (Google Gemini, OpenAI, Bedrock) are currently rate-limited or unavailable. "
+                "Please make sure your local Ollama is active (`ollama run gemma3`) and listening on port 11434."
+            )
         return {
             "status": "error",
-            "message": result["error"],
+            "message": err_msg,
             "raw": result.get("raw", "")
         }
 
@@ -209,6 +216,16 @@ def chat_with_assistant(req: ChatRequest):
         except Exception as oai_err:
             print(f"OpenAI chat fallback failed: {oai_err}")
             
+    if "rate limit" in reply_text.lower() or "high demand" in reply_text.lower() or "quota" in reply_text.lower():
+        reply_text = (
+            "I tried to route your request to your local Ollama instance (http://localhost:11434), "
+            "but the connection was refused. I then tried falling back to Google Cloud APIs, "
+            "but they are currently experiencing high demand/rate limits.\n\n"
+            "**Action Required**:\n"
+            "1. Please make sure Ollama is running on your computer (`ollama serve`).\n"
+            "2. If it's already running, ensure you have set `OLLAMA_ORIGINS=*` in your environment so your browser can connect to it."
+        )
+
     return {
         "status": "success",
         "reply": reply_text if reply_text else "I had a temporary connection issue. How else can I help?"
