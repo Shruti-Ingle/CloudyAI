@@ -1,8 +1,8 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/bin/python",
-  "python.pythonPath": "${workspaceFolder}/backend/venv/bin/python",
+  "python.defaultInterpreterPath": "backend/venv/bin/python",
+  "python.pythonPath": "backend/venv/bin/python",
   "python.analysis.extraPaths": [
-    "${workspaceFolder}/backend"
+    "backend"
   ],
   "python.analysis.typeCheckingMode": "basic"
 }
