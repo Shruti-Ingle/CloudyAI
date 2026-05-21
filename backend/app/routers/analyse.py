@@ -13,11 +13,29 @@ def analyse_architecture(req: AnalyseRequest):
     result = gemini_service.analyse_architecture(req.architecture_data)
     
     if "error" in result:
+        # Try AWS Bedrock as the ultimate self-healing fallback!
+        try:
+            print("Gemini analysis failed - attempting AWS Bedrock fallback...")
+            from app.services.bedrock_service import BedrockService
+            bedrock_service = BedrockService()
+            bedrock_result = bedrock_service.analyse_architecture(req.architecture_data)
+            if bedrock_result and "error" not in bedrock_result:
+                print("Successfully recovered from analysis failure using AWS Bedrock fallback!")
+                return {
+                    "status": "success",
+                    "issues": bedrock_result.get("issues", []),
+                    "suggested_nodes": bedrock_result.get("suggested_nodes", []),
+                    "suggested_edges": bedrock_result.get("suggested_edges", [])
+                }
+        except Exception as bedrock_err:
+            print(f"AWS Bedrock fallback analysis failed: {bedrock_err}")
+
         return {
             "status": "error",
             "message": result["error"],
             "raw": result.get("raw", "")
         }
+
         
     return {
         "status": "success",

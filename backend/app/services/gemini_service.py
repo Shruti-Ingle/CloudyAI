@@ -8,11 +8,21 @@ class GeminiService:
         # We read GEMINI_API_KEY from environment variables.
         # It supports a single key or a list of multiple keys separated by commas!
         raw_keys = os.environ.get("GEMINI_API_KEY", "")
-        self.api_keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
+        parsed_keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
+        
+        # Filter out known invalid/revoked keys to avoid polluting fallback logic with false 400 errors
+        bad_keys = {
+            "AIzaSyCuYqmh3lyW6-L17a9x1-nsk4uzJ_pvxYE",
+            "AIzaSyBM77TSeHxqvbDDIQwHCDUkSND4ci8vcmw",
+            "AIzaSyB7W9rlvfLonC3WCFTp8MTduTvEQggJLPU"
+        }
+        self.api_keys = [k for k in parsed_keys if k not in bad_keys]
+        
         if not self.api_keys:
             # Fallback to the recovered verified active key!
             self.api_keys = ["AIzaSyCbY9zUV6DMN0A_BZD-Gxh2cFSeMkeiuBI"]
         self.api_key = self.api_keys[0] if self.api_keys else None
+
 
     def generate_architecture(self, prompt: str, platform: str = "AWS", history: list = None):
         if not self.api_keys:
@@ -83,6 +93,7 @@ class GeminiService:
         # Multi-model fallback list to handle temporary high demand (503s) of preview/new models
         models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest"]
         last_error = None
+        quota_or_rate_limit_error = None
 
         for model in models:
             for api_key in self.api_keys:
@@ -106,13 +117,17 @@ class GeminiService:
                     error_msg = e.read().decode('utf-8')
                     print(f"Model {model} with key failed: HTTP Error {e.code}: {error_msg}")
                     last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
+                    if e.code in [429, 503] or "quota" in error_msg.lower() or "rate limit" in error_msg.lower() or "demand" in error_msg.lower():
+                        quota_or_rate_limit_error = last_error
                     # Self-healing API key ring: seamlessly rotate to next key on ANY api key error (invalid, rate-limit, etc.)
                     continue
                 except Exception as e:
                     print(f"Model {model} with key failed with general error: {e}")
                     last_error = f"Model {model} failed: {str(e)}"
 
-        return {"error": f"Failed to generate architecture after trying all available Gemini models and API key rings. Last error: {last_error}"}
+        final_error = quota_or_rate_limit_error if quota_or_rate_limit_error else last_error
+        return {"error": f"Failed to generate architecture after trying all available Gemini models and API key rings. Last error: {final_error}"}
+
 
     def generate_chat_response(self, user_message: str, history: list, platform: str = "AWS", question_index: int = None):
         if not self.api_keys:
@@ -282,6 +297,7 @@ class GeminiService:
         # Multi-model fallback list to handle temporary high demand (503s) of preview/new models
         models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest"]
         last_error = None
+        quota_or_rate_limit_error = None
 
         for model in models:
             for api_key in self.api_keys:
@@ -304,10 +320,14 @@ class GeminiService:
                     error_msg = e.read().decode('utf-8')
                     print(f"Model {model} analysis failed with HTTP Error {e.code}: {error_msg}")
                     last_error = f"Model {model} failed (HTTP {e.code}): {error_msg}"
+                    if e.code in [429, 503] or "quota" in error_msg.lower() or "rate limit" in error_msg.lower() or "demand" in error_msg.lower():
+                        quota_or_rate_limit_error = last_error
                     # Self-healing API key ring: seamlessly rotate to next key on ANY api key error (invalid, rate-limit, etc.)
                     continue
                 except Exception as e:
                     print(f"Model {model} analysis failed with general error: {e}")
                     last_error = f"Model {model} failed: {str(e)}"
 
-        return {"error": f"Failed to analyze architecture after trying all available Gemini models and API key rings. Last error: {last_error}"}
+        final_error = quota_or_rate_limit_error if quota_or_rate_limit_error else last_error
+        return {"error": f"Failed to analyze architecture after trying all available Gemini models and API key rings. Last error: {final_error}"}
+

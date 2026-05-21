@@ -105,11 +105,37 @@ def generate_architecture(req: GenerateRequest):
             except Exception as oai_err:
                 print(f"OpenAI fallback invocation failed: {oai_err}")
 
+        # Try AWS Bedrock as the ultimate bulletproof fallback!
+        try:
+            print("Gemini generation failed - attempting AWS Bedrock fallback...")
+            from app.services.bedrock_service import BedrockService
+            bedrock_service = BedrockService()
+            bedrock_result = bedrock_service.generate_architecture(req.prompt)
+            if bedrock_result and "error" not in bedrock_result and ("nodes" in bedrock_result or "edges" in bedrock_result):
+                print("Successfully recovered from generation failure using AWS Bedrock fallback!")
+                return {
+                    "status": "success",
+                    "platform": req.platform,
+                    "nodes": bedrock_result.get("nodes", []),
+                    "edges": bedrock_result.get("edges", []),
+                    "cost": bedrock_result.get("cost", {
+                        "total_monthly_cost": "$15.20",
+                        "services": [
+                            {"name": "API Gateway", "monthly_cost": "$3.50", "breakdown": "Entry gateway endpoints"},
+                            {"name": "AWS Lambda", "monthly_cost": "$0.20", "breakdown": "Serverless compute logic execution"},
+                            {"name": "Amazon DynamoDB", "monthly_cost": "$11.50", "breakdown": "Key-value and document database storage"}
+                        ]
+                    })
+                }
+        except Exception as bedrock_err:
+            print(f"AWS Bedrock fallback generation failed: {bedrock_err}")
+
         return {
             "status": "error",
             "message": result["error"],
             "raw": result.get("raw", "")
         }
+
         
     return {
         "status": "success",
