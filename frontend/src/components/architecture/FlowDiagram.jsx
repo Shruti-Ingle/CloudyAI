@@ -14,7 +14,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Server, Cpu, Database, Cloud, Globe, Shield, HardDrive, Trash2, Plus, GripVertical, ChevronLeft, ChevronRight, Settings, Info, Sliders, Check
+  Server, Cpu, Database, Cloud, Globe, Shield, HardDrive, Trash2, Plus, GripVertical, ChevronLeft, ChevronRight, Settings, Info, Sliders, Check, X
 } from 'lucide-react';
 
 const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiagramChange }) => {

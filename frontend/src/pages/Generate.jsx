@@ -17,6 +17,7 @@ const Generate = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedData, setGeneratedData] = useState(null);
   const [error, setError] = useState(null);
+  const [panelExpanded, setPanelExpanded] = useState(false);
 
   // Managed workspace state to enable real-time canvas dragging and editing
   const [nodes, setNodes] = useState([]);
@@ -112,10 +113,14 @@ const Generate = () => {
         cost: loadedCost
       });
       setHasGenerated(true);
+      setPanelExpanded(false);
     }
   }, [location.state]);
 
   const handleGenerate = async (prompt, platform, history) => {
+    if (!hasGenerated) {
+      setPanelExpanded(false);
+    }
     setIsGenerating(true);
     setError(null);
     try {
@@ -287,6 +292,7 @@ const Generate = () => {
           <motion.div 
             initial={{ opacity: 0, x: 20, width: 0 }}
             animate={{ opacity: 1, x: 0, width: '66.666667%' }}
+            onAnimationComplete={() => setPanelExpanded(true)}
             className="h-full flex flex-col glass-card rounded-2xl border border-slate-700/50 overflow-hidden"
           >
             {/* Tab controls */}
@@ -352,11 +358,21 @@ const Generate = () => {
                 <>
                   {/* 1. React Flow Diagram Tab */}
                   {activeTab === 'diagram' ? (
-                    <FlowDiagram 
-                      nodes={nodes} 
-                      edges={edges} 
-                      onDiagramChange={handleDiagramChange}
-                    />
+                    panelExpanded ? (
+                      <FlowDiagram 
+                        nodes={nodes} 
+                        edges={edges} 
+                        onDiagramChange={handleDiagramChange}
+                      />
+                    ) : (
+                      <div className="flex-1 flex flex-col items-center justify-center font-Outfit">
+                        <div className="relative w-12 h-12 mb-4">
+                          <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20"></div>
+                          <div className="absolute inset-0 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+                        </div>
+                        <p className="text-slate-400 text-xs font-bold">Initializing Canvas Dimensions...</p>
+                      </div>
+                    )
                   ) : activeTab === 'cost' ? (
                     /* 2. Premium Monthly Cost Tab & Provider Comparison */
                     <motion.div 
