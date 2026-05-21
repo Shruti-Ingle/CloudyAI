@@ -145,6 +145,13 @@ vite.config.ts.timestamp-*
 
 # Python / Virtual Environment
 venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.aws-sam/
 
 # OS Files
 .DS_Store
