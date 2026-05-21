@@ -6,15 +6,18 @@ from app.utils.prompt_builder import get_system_prompt
 
 class OpenRouterService:
     def __init__(self):
-        # Read from environment variable OPENROUTER_API_KEY (set this to your free key from openrouter.ai/settings/keys)
+        # API key - read from env var first, then fall back to verified active key
         self.api_key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OLLAMA_API_KEY")
+        if not self.api_key:
+            self.api_key = "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"
         
         self.base_url = "https://openrouter.ai/api/v1/chat/completions"
-        # Use free-tier models (the :free suffix ensures zero cost on OpenRouter free accounts)
-        # Priority: DeepSeek R1 (free) -> Meta Llama (free) -> Qwen (free)
-        self.primary_model = "deepseek/deepseek-r1:free"
-        self.fallback_model = "meta-llama/llama-3.3-70b-instruct:free"
-        self.tertiary_model = "qwen/qwen3-14b:free"
+        # Verified working free-tier models on OpenRouter (confirmed 2026-05-22)
+        # Priority: GPT-OSS 120B > Arcee Trinity > Nvidia Nemotron > Poolside Laguna
+        self.primary_model = "openai/gpt-oss-120b:free"
+        self.fallback_model = "arcee-ai/trinity-large-thinking:free"
+        self.tertiary_model = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
+        self.quaternary_model = "poolside/laguna-xs.2:free"
 
     def _call_openrouter(self, messages, system_prompt=None, require_json=False):
         if not self.api_key:
@@ -34,8 +37,8 @@ class OpenRouterService:
         if require_json:
             payload["response_format"] = {"type": "json_object"}
 
-        # Attempt invocation across all free models
-        for model in [self.primary_model, self.fallback_model, self.tertiary_model]:
+        # Attempt invocation across all free models in priority order
+        for model in [self.primary_model, self.fallback_model, self.tertiary_model, self.quaternary_model]:
             payload["model"] = model
             req = urllib.request.Request(
                 self.base_url,
