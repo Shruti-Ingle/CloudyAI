@@ -1,6 +1,5 @@
 import PageWrapper from '../components/layout/PageWrapper';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 
 const Landing = () => {
   return (
@@ -34,12 +33,12 @@ const Landing = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
         >
-          <Link to="/register" className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-semibold transition-all shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)]">
+          <a href="/register" className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-semibold transition-all shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)]">
             Get Started
-          </Link>
-          <Link to="/login" className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-full font-semibold transition-all border border-slate-700 hover:border-slate-600">
+          </a>
+          <a href="/login" className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-full font-semibold transition-all border border-slate-700 hover:border-slate-600">
             Login
-          </Link>
+          </a>
         </motion.div>
       </div>
     </PageWrapper>

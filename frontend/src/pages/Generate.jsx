@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import PageWrapper from '../components/layout/PageWrapper';
 import ChatInterface from '../components/cloudy/ChatInterface';
 import FlowDiagram from '../components/architecture/FlowDiagram';
@@ -11,7 +10,6 @@ import { generateLocalArchitecture } from '../utils/localOllama';
 
 
 const Generate = () => {
-  const location = useLocation();
   const [hasGenerated, setHasGenerated] = useState(false);
   const [activeTab, setActiveTab] = useState('diagram');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -96,26 +94,35 @@ const Generate = () => {
   };
 
   useEffect(() => {
-    if (location.state?.historyItem) {
-      const item = location.state.historyItem;
-      setNodes(item.nodes || []);
-      setEdges(item.edges || []);
-      
-      const loadedCost = item.cost_details || { total_monthly_cost: item.cost || '$0.00', services: [] };
-      setCost(loadedCost);
-      runSecurityAudit(item.nodes || [], item.edges || []);
-      
-      setGeneratedData(item.rawArchitecture || {
-        status: 'success',
-        platform: item.platform,
-        nodes: item.nodes || [],
-        edges: item.edges || [],
-        cost: loadedCost
-      });
-      setHasGenerated(true);
-      setPanelExpanded(false);
+    const stored = sessionStorage.getItem('selectedHistoryItem');
+    if (stored) {
+      try {
+        const item = JSON.parse(stored);
+        sessionStorage.removeItem('selectedHistoryItem');
+        
+        if (item) {
+          setNodes(item.nodes || []);
+          setEdges(item.edges || []);
+          
+          const loadedCost = item.cost_details || { total_monthly_cost: item.cost || '$0.00', services: [] };
+          setCost(loadedCost);
+          runSecurityAudit(item.nodes || [], item.edges || []);
+          
+          setGeneratedData(item.rawArchitecture || {
+            status: 'success',
+            platform: item.platform,
+            nodes: item.nodes || [],
+            edges: item.edges || [],
+            cost: loadedCost
+          });
+          setHasGenerated(true);
+          setPanelExpanded(false);
+        }
+      } catch (e) {
+        console.error('Failed to parse historyItem from sessionStorage', e);
+      }
     }
-  }, [location.state]);
+  }, []);
 
   const handleGenerate = async (prompt, platform, history) => {
     if (!hasGenerated) {

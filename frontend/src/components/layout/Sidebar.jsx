@@ -1,10 +1,10 @@
-import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, Wand2, Search, History, LogOut } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 const Sidebar = () => {
   const { logout } = useAuth();
+  const currentPath = window.location.pathname;
 
   const links = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -23,32 +23,29 @@ const Sidebar = () => {
       </div>
 
       <nav className="flex-1 px-4 py-4 space-y-2">
-        {links.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative overflow-hidden group ${
+        {links.map((link) => {
+          const isActive = currentPath === link.to || currentPath.startsWith(link.to + '.html') || (currentPath === '/' && link.to === '/dashboard');
+          return (
+            <a
+              key={link.to}
+              href={link.to}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative overflow-hidden group ${
                 isActive ? 'text-white bg-indigo-500/10' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-0 bg-indigo-500/20 border-l-2 border-indigo-500"
-                    initial={false}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  />
-                )}
-                <link.icon className="w-5 h-5 relative z-10" />
-                <span className="font-medium relative z-10">{link.label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute inset-0 bg-indigo-500/20 border-l-2 border-indigo-500"
+                  initial={false}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                />
+              )}
+              <link.icon className="w-5 h-5 relative z-10" />
+              <span className="font-medium relative z-10">{link.label}</span>
+            </a>
+          );
+        })}
       </nav>
 
       <div className="p-4 border-t border-slate-700/50">

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import PageWrapper from '../components/layout/PageWrapper';
 import UploadInput from '../components/analyser/UploadInput';
 import BreakdownList from '../components/analyser/BreakdownList';
@@ -10,7 +9,6 @@ import api from '../utils/api';
 import { saveHistoryItem } from '../utils/history';
 
 const Analyse = () => {
-  const location = useLocation();
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [hasAnalysed, setHasAnalysed] = useState(false);
   const [issues, setIssues] = useState([]);
@@ -20,15 +18,24 @@ const Analyse = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (location.state?.historyItem) {
-      const item = location.state.historyItem;
-      setBeforeNodes(item.beforeNodes || null);
-      setBeforeEdges(item.beforeEdges || null);
-      setAnalysisData(item.rawAnalysis || null);
-      setIssues(item.issues_list || item.rawAnalysis?.issues || []);
-      setHasAnalysed(true);
+    const stored = sessionStorage.getItem('selectedHistoryItem');
+    if (stored) {
+      try {
+        const item = JSON.parse(stored);
+        sessionStorage.removeItem('selectedHistoryItem');
+        
+        if (item) {
+          setBeforeNodes(item.beforeNodes || null);
+          setBeforeEdges(item.beforeEdges || null);
+          setAnalysisData(item.rawAnalysis || null);
+          setIssues(item.issues_list || item.rawAnalysis?.issues || []);
+          setHasAnalysed(true);
+        }
+      } catch (e) {
+        console.error('Failed to parse historyItem from sessionStorage', e);
+      }
     }
-  }, [location.state]);
+  }, []);
 
   const handleUpload = async (data) => {
     setIsAnalysing(true);

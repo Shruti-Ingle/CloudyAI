@@ -3,18 +3,17 @@ import PageWrapper from '../components/layout/PageWrapper';
 import { motion } from 'framer-motion';
 import { Database, Wand2, Search, ExternalLink, Calendar, Cloud, Sparkles } from 'lucide-react';
 import { getHistoryItems } from '../utils/history';
-import { Link, useNavigate } from 'react-router-dom';
 
 const History = () => {
-  const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
   const [history, setHistory] = useState([]);
 
   const handleCardClick = (item) => {
+    sessionStorage.setItem('selectedHistoryItem', JSON.stringify(item));
     if (item.type === 'generated') {
-      navigate('/generate', { state: { historyItem: item } });
+      window.location.href = '/generate';
     } else {
-      navigate('/analyse', { state: { historyItem: item } });
+      window.location.href = '/analyse';
     }
   };
 
@@ -59,12 +58,12 @@ const History = () => {
           <Sparkles className="w-10 h-10 text-indigo-400/50 animate-pulse" />
           <p className="text-slate-400 text-lg">No architectures in your history database.</p>
           <p className="text-slate-500 text-sm max-w-sm">Every time you generate a cloud layout using Cloudy AI, it will dynamically save here without arbitrary mocks!</p>
-          <Link 
-            to="/generate" 
+          <a 
+            href="/generate" 
             className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-900/30 border border-indigo-500/20 mt-2"
           >
             Create Your First Architecture
-          </Link>
+          </a>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

@@ -1,18 +1,23 @@
-import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
-const ProtectedRoute = () => {
+const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-navy-900"><div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-navy-900">
+        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Perform standard browser redirect in Multi-Page setup to prevent auth lockout
+    window.location.href = '/login';
+    return null;
   }
 
-  return <Outlet />;
+  return children;
 };
 
 export default ProtectedRoute;

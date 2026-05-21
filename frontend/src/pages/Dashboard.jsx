@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { Database, Search, Wand2, Activity, Sparkles, Pencil, Check, X } from 'lucide-react';
 import { getHistoryItems } from '../utils/history';
-import { Link } from 'react-router-dom';
 
 const StatCard = ({ title, value, icon: Icon, delay }) => (
   <motion.div 
@@ -110,19 +109,19 @@ const Dashboard = () => {
         >
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-white">Recent Activity</h3>
-            <Link to="/history" className="text-sm text-indigo-400 hover:text-indigo-300 font-semibold">View All</Link>
+            <a href="/history" className="text-sm text-indigo-400 hover:text-indigo-300 font-semibold">View All</a>
           </div>
           <div className="space-y-4">
             {history.length === 0 ? (
               <div className="text-center py-10 bg-slate-900/40 rounded-xl border border-dashed border-slate-800 flex flex-col items-center justify-center gap-3">
                 <Sparkles className="w-8 h-8 text-indigo-400/50 animate-pulse" />
                 <p className="text-slate-400 text-sm">No recent architectures or analyses yet.</p>
-                <Link 
-                  to="/generate" 
+                <a 
+                  href="/generate" 
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all shadow-md"
                 >
                   Generate First Architecture
-                </Link>
+                </a>
               </div>
             ) : (
               history.slice(0, 3).map((item) => (
@@ -140,12 +139,12 @@ const Dashboard = () => {
                     <span className="text-xs px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-indigo-400 font-bold uppercase tracking-wider">
                       {item.platform}
                     </span>
-                    <Link 
-                      to="/history"
+                    <a 
+                      href="/history"
                       className="px-4 py-2 bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 rounded-lg text-sm font-semibold transition-colors"
                     >
                       View
-                    </Link>
+                    </a>
                   </div>
                 </div>
               ))

@@ -1,12 +1,10 @@
 import PageWrapper from '../components/layout/PageWrapper';
 import { useAuth } from '../hooks/useAuth';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const Register = () => {
   const { register } = useAuth();
-  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,7 +14,7 @@ const Register = () => {
     e.preventDefault();
     const result = await register(name, email, password);
     if (result.success) {
-      navigate('/dashboard');
+      window.location.href = '/dashboard';
     } else {
       setError(result.error);
     }
@@ -73,7 +71,7 @@ const Register = () => {
         </form>
         
         <div className="mt-6 text-center text-sm text-slate-400">
-          Already have an account? <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-medium">Log in</Link>
+          Already have an account? <a href="/login" className="text-indigo-400 hover:text-indigo-300 font-medium">Log in</a>
         </div>
       </motion.div>
     </PageWrapper>
