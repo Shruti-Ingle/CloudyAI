@@ -5,7 +5,7 @@ import FlowDiagram from '../components/architecture/FlowDiagram';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import { AlertCircle, ShieldAlert, ShieldCheck, HelpCircle, ArrowRight, Activity, Zap } from 'lucide-react';
-import { saveHistoryItem } from '../utils/history';
+import { saveHistoryItem, getHistoryItems } from '../utils/history';
 import { generateLocalArchitecture } from '../utils/localOllama';
 
 
@@ -94,35 +94,35 @@ const Generate = () => {
   };
 
   useEffect(() => {
-    const stored = sessionStorage.getItem('selectedHistoryItem');
-    if (stored) {
-      try {
-        const item = JSON.parse(stored);
-        sessionStorage.removeItem('selectedHistoryItem');
-        
-        if (item) {
-          setNodes(item.nodes || []);
-          setEdges(item.edges || []);
-          
-          const loadedCost = item.cost_details || { total_monthly_cost: item.cost || '$0.00', services: [] };
-          setCost(loadedCost);
-          runSecurityAudit(item.nodes || [], item.edges || []);
-          
-          setGeneratedData(item.rawArchitecture || {
-            status: 'success',
-            platform: item.platform,
-            nodes: item.nodes || [],
-            edges: item.edges || [],
-            cost: loadedCost
-          });
-          setHasGenerated(true);
-          setPanelExpanded(false);
-        }
-      } catch (e) {
-        console.error('Failed to parse historyItem from sessionStorage', e);
+    // Read history item ID from URL query param (avoids sessionStorage + React StrictMode issues)
+    const params = new URLSearchParams(window.location.search);
+    const loadId = params.get('load');
+
+    if (loadId) {
+      const allHistory = getHistoryItems();
+      const item = allHistory.find(h => String(h.id) === String(loadId));
+
+      if (item) {
+        setNodes(item.nodes || []);
+        setEdges(item.edges || []);
+
+        const loadedCost = item.cost_details || { total_monthly_cost: item.cost || '$0.00', services: [] };
+        setCost(loadedCost);
+        runSecurityAudit(item.nodes || [], item.edges || []);
+
+        setGeneratedData(item.rawArchitecture || {
+          status: 'success',
+          platform: item.platform,
+          nodes: item.nodes || [],
+          edges: item.edges || [],
+          cost: loadedCost
+        });
+        setHasGenerated(true);
+        setPanelExpanded(true); // Immediately show canvas — don't wait for animation
       }
     }
   }, []);
+
 
   const handleGenerate = async (prompt, platform, history) => {
     if (!hasGenerated) {

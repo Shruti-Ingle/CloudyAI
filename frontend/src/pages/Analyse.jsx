@@ -6,7 +6,7 @@ import ComparisonDiagram from '../components/analyser/ComparisonDiagram';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, AlertCircle } from 'lucide-react';
 import api from '../utils/api';
-import { saveHistoryItem } from '../utils/history';
+import { saveHistoryItem, getHistoryItems } from '../utils/history';
 
 const Analyse = () => {
   const [isAnalysing, setIsAnalysing] = useState(false);
@@ -18,24 +18,24 @@ const Analyse = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem('selectedHistoryItem');
-    if (stored) {
-      try {
-        const item = JSON.parse(stored);
-        sessionStorage.removeItem('selectedHistoryItem');
-        
-        if (item) {
-          setBeforeNodes(item.beforeNodes || null);
-          setBeforeEdges(item.beforeEdges || null);
-          setAnalysisData(item.rawAnalysis || null);
-          setIssues(item.issues_list || item.rawAnalysis?.issues || []);
-          setHasAnalysed(true);
-        }
-      } catch (e) {
-        console.error('Failed to parse historyItem from sessionStorage', e);
+    // Read history item ID from URL query param (avoids sessionStorage + React StrictMode issues)
+    const params = new URLSearchParams(window.location.search);
+    const loadId = params.get('load');
+
+    if (loadId) {
+      const allHistory = getHistoryItems();
+      const item = allHistory.find(h => String(h.id) === String(loadId));
+
+      if (item) {
+        setBeforeNodes(item.beforeNodes || null);
+        setBeforeEdges(item.beforeEdges || null);
+        setAnalysisData(item.rawAnalysis || null);
+        setIssues(item.issues_list || item.rawAnalysis?.issues || []);
+        setHasAnalysed(true);
       }
     }
   }, []);
+
 
   const handleUpload = async (data) => {
     setIsAnalysing(true);

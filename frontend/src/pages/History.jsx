@@ -9,11 +9,10 @@ const History = () => {
   const [history, setHistory] = useState([]);
 
   const handleCardClick = (item) => {
-    sessionStorage.setItem('selectedHistoryItem', JSON.stringify(item));
     if (item.type === 'generated') {
-      window.location.href = '/generate';
+      window.location.href = `/generate?load=${item.id}`;
     } else {
-      window.location.href = '/analyse';
+      window.location.href = `/analyse?load=${item.id}`;
     }
   };
 
