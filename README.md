@@ -1,4 +1,4 @@
-# CloudDaddy — AI Cloud Architecture Intelligence Platform
+# Cloudy ai - Cloud Architecture Intelligence Platform
 ### Master Project Brief & Developer Prompts
 
 ---
