@@ -125,12 +125,22 @@ const Dashboard = () => {
               </div>
             ) : (
               history.slice(0, 3).map((item) => (
-                <div key={item.id} className="flex items-center gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-slate-600 transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-slate-700/50 flex items-center justify-center">
-                    <Activity className="w-5 h-5 text-slate-300" />
+                <div 
+                  key={item.id} 
+                  onClick={() => {
+                    if (item.type === 'generated') {
+                      window.location.href = `/generate?load=${item.id}`;
+                    } else {
+                      window.location.href = `/analyse?load=${item.id}`;
+                    }
+                  }}
+                  className="flex items-center gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-indigo-500/50 hover:bg-slate-800/80 cursor-pointer transition-all group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-slate-700/50 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Activity className="w-5 h-5 text-indigo-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-white font-medium truncate">{item.title}</h4>
+                    <h4 className="text-white font-medium truncate group-hover:text-indigo-300 transition-colors">{item.title}</h4>
                     <p className="text-sm text-slate-400">
                       Generated on {item.platform} • {new Date(item.date).toLocaleDateString()}
                     </p>
@@ -140,7 +150,8 @@ const Dashboard = () => {
                       {item.platform}
                     </span>
                     <a 
-                      href="/history"
+                      href={item.type === 'generated' ? `/generate?load=${item.id}` : `/analyse?load=${item.id}`}
+                      onClick={(e) => e.stopPropagation()}
                       className="px-4 py-2 bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 rounded-lg text-sm font-semibold transition-colors"
                     >
                       View
