@@ -284,7 +284,7 @@ const Generate = () => {
   const currentTotalCost = getNumericCost();
 
   return (
-    <PageWrapper className="flex gap-6 h-[calc(100vh-8rem)]">
+    <PageWrapper className="flex gap-6 h-full">
       {/* Cloudy Chat Column */}
       <motion.div 
         className={`${hasGenerated ? 'w-1/3' : 'w-full max-w-3xl mx-auto'} h-full transition-all duration-700 ease-in-out`}

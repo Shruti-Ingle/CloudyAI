@@ -91,7 +91,7 @@ const Analyse = () => {
   };
 
   return (
-    <PageWrapper className="flex flex-col h-[calc(100vh-8rem)]">
+    <PageWrapper className="flex flex-col h-full">
       {!hasAnalysed && !isAnalysing && !error && (
         <div className="max-w-3xl mx-auto w-full mt-10">
           <div className="text-center mb-8">

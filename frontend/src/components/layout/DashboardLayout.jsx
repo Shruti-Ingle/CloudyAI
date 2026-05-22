@@ -11,9 +11,9 @@ const DashboardLayout = ({ children }) => {
   else if (path.includes('history')) title = 'Generation History';
 
   return (
-    <div className="flex min-h-screen bg-[#0f172a]">
+    <div className="flex h-screen bg-[#0f172a] overflow-hidden">
       <Sidebar />
-      <div className="flex-1 ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
         <Navbar title={title} />
         <main className="flex-1 overflow-auto p-8 relative">
           {children}
