@@ -1,11 +1,11 @@
-# Cloudy ai - Cloud Architecture Intelligence Platform
+# Cloudy AI - Cloud Architecture Intelligence Platform
 ### Master Project Brief & Developer Prompts
 
 ---
 
 ## Table of Contents
 
-1. [What is CloudDaddy?](#1-what-is-clouddaddy)
+1. [What is Cloudy AI?](#1-what-is-cloudyAI)
 2. [Core Features](#2-core-features)
 3. [System Architecture Overview](#3-system-architecture-overview)
 4. [Tech Stack at a Glance](#4-tech-stack-at-a-glance)
@@ -21,9 +21,9 @@
 
 ---
 
-## 1. What is CloudDaddy?
+## 1. What is CloudyAI?
 
-**CloudDaddy** is an enterprise-grade AI Cloud Architecture Intelligence Platform that helps organizations design, optimize, secure, and monitor cloud infrastructure — automatically — using Agentic AI, LLM reasoning, and custom-trained ML models.
+**CloudyAI** is an enterprise-grade AI Cloud Architecture Intelligence Platform that helps organizations design, optimize, secure, and monitor cloud infrastructure — automatically — using Agentic AI, LLM reasoning, and custom-trained ML models.
 
 It is not a chatbot. It is a full-stack intelligent platform where users describe their cloud requirements or upload existing infrastructure configs (Terraform, CloudFormation, YAML, Kubernetes), and the system runs a multi-agent AI pipeline that:
 
@@ -143,7 +143,7 @@ FastAPI (Core API)      Celery Workers (Async)
 ## 6. Repository & Folder Structure
 
 ```
-clouddaddy/
+cloudyAI/
 ├── frontend/
 │   ├── app/
 │   ├── components/
