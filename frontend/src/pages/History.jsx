@@ -9,10 +9,11 @@ const History = () => {
   const [history, setHistory] = useState([]);
 
   const handleCardClick = (item) => {
+    const hasHtml = window.location.pathname.includes('.html');
     if (item.type === 'generated') {
-      window.location.href = `/generate?load=${item.id}`;
+      window.location.href = `/generate${hasHtml ? '.html' : ''}?load=${item.id}`;
     } else {
-      window.location.href = `/analyse?load=${item.id}`;
+      window.location.href = `/analyse${hasHtml ? '.html' : ''}?load=${item.id}`;
     }
   };
 

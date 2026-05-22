@@ -14,7 +14,8 @@ const Register = () => {
     e.preventDefault();
     const result = await register(name, email, password);
     if (result.success) {
-      window.location.href = '/dashboard';
+      const hasHtml = window.location.pathname.includes('.html');
+      window.location.href = hasHtml ? '/dashboard.html' : '/dashboard';
     } else {
       setError(result.error);
     }
@@ -71,7 +72,7 @@ const Register = () => {
         </form>
         
         <div className="mt-6 text-center text-sm text-slate-400">
-          Already have an account? <a href="/login" className="text-indigo-400 hover:text-indigo-300 font-medium">Log in</a>
+          Already have an account? <a href={window.location.pathname.includes('.html') ? '/login.html' : '/login'} className="text-indigo-400 hover:text-indigo-300 font-medium">Log in</a>
         </div>
       </motion.div>
     </PageWrapper>

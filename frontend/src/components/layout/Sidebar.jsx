@@ -28,7 +28,7 @@ const Sidebar = () => {
           return (
             <a
               key={link.to}
-              href={link.to}
+              href={window.location.pathname.includes('.html') ? `${link.to}.html` : link.to}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative overflow-hidden group ${
                 isActive ? 'text-white bg-indigo-500/10' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }`}

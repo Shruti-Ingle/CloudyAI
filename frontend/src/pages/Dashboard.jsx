@@ -109,7 +109,7 @@ const Dashboard = () => {
         >
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-white">Recent Activity</h3>
-            <a href="/history" className="text-sm text-indigo-400 hover:text-indigo-300 font-semibold">View All</a>
+            <a href={`/history${window.location.pathname.includes('.html') ? '.html' : ''}`} className="text-sm text-indigo-400 hover:text-indigo-300 font-semibold">View All</a>
           </div>
           <div className="space-y-4">
             {history.length === 0 ? (
@@ -117,7 +117,7 @@ const Dashboard = () => {
                 <Sparkles className="w-8 h-8 text-indigo-400/50 animate-pulse" />
                 <p className="text-slate-400 text-sm">No recent architectures or analyses yet.</p>
                 <a 
-                  href="/generate" 
+                  href={`/generate${window.location.pathname.includes('.html') ? '.html' : ''}`} 
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all shadow-md"
                 >
                   Generate First Architecture
@@ -128,10 +128,11 @@ const Dashboard = () => {
                 <div 
                   key={item.id} 
                   onClick={() => {
+                    const hasHtml = window.location.pathname.includes('.html');
                     if (item.type === 'generated') {
-                      window.location.href = `/generate?load=${item.id}`;
+                      window.location.href = `/generate${hasHtml ? '.html' : ''}?load=${item.id}`;
                     } else {
-                      window.location.href = `/analyse?load=${item.id}`;
+                      window.location.href = `/analyse${hasHtml ? '.html' : ''}?load=${item.id}`;
                     }
                   }}
                   className="flex items-center gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-indigo-500/50 hover:bg-slate-800/80 cursor-pointer transition-all group"
@@ -150,7 +151,10 @@ const Dashboard = () => {
                       {item.platform}
                     </span>
                     <a 
-                      href={item.type === 'generated' ? `/generate?load=${item.id}` : `/analyse?load=${item.id}`}
+                      href={item.type === 'generated'
+                        ? `/generate${window.location.pathname.includes('.html') ? '.html' : ''}?load=${item.id}`
+                        : `/analyse${window.location.pathname.includes('.html') ? '.html' : ''}?load=${item.id}`
+                      }
                       onClick={(e) => e.stopPropagation()}
                       className="px-4 py-2 bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 rounded-lg text-sm font-semibold transition-colors"
                     >

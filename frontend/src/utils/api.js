@@ -50,7 +50,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed, redirect to login
         localStorage.removeItem('accessToken');
-        window.location.href = '/login?expired=true';
+        window.location.href = `${window.location.pathname.includes('.html') ? '/login.html' : '/login'}?expired=true`;
         return Promise.reject(refreshError);
       }
     }

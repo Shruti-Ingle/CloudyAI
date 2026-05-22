@@ -13,7 +13,8 @@ const Login = () => {
     e.preventDefault();
     const result = await login(email, password);
     if (result.success) {
-      window.location.href = '/dashboard';
+      const hasHtml = window.location.pathname.includes('.html');
+      window.location.href = hasHtml ? '/dashboard.html' : '/dashboard';
     } else {
       setError(result.error);
     }
@@ -63,7 +64,7 @@ const Login = () => {
         </form>
         
         <div className="mt-6 text-center text-sm text-slate-400">
-          Don't have an account? <a href="/register" className="text-indigo-400 hover:text-indigo-300 font-medium">Register here</a>
+          Don't have an account? <a href={window.location.pathname.includes('.html') ? '/register.html' : '/register'} className="text-indigo-400 hover:text-indigo-300 font-medium">Register here</a>
         </div>
       </motion.div>
     </PageWrapper>

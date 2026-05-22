@@ -13,7 +13,7 @@ const ProtectedRoute = ({ children }) => {
 
   if (!user) {
     // Perform standard browser redirect in Multi-Page setup to prevent auth lockout
-    window.location.href = '/login';
+    window.location.href = window.location.pathname.includes('.html') ? '/login.html' : '/login';
     return null;
   }
 
