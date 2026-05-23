@@ -32,7 +32,7 @@
 
 <br/>
 
-[**🚀 Live Demo**](#) · [**📖 Documentation**](#) · [**🐛 Report a Bug**](../../issues) · [**✨ Request a Feature**](../../issues) · [**💬 Discussions**](../../discussions)
+[**🚀 Live Demo**](https://cloud-daddy.vercel.app/ ) · [**📖 Documentation**](#) · [**🐛 Report a Bug**](../../issues) · [**✨ Request a Feature**](../../issues) · [**💬 Discussions**](../../discussions)
 
 </div>
 
