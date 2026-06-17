@@ -13,6 +13,6 @@
 - [x] Verification & Testing
   - [x] Run Pytest automated tests
   - [x] Verify local model creation in Ollama
-- [ ] Git Commit & Push
-  - [ ] Commit all code changes
-  - [ ] Push changes to the git repository
+- [x] Git Commit & Push
+  - [x] Commit all code changes
+  - [x] Push changes to the git repository
