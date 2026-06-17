@@ -21,7 +21,7 @@ const Login = () => {
   };
 
   return (
-    <PageWrapper className="flex items-center justify-center p-6">
+    <PageWrapper className="flex items-center justify-center p-6 min-h-screen">
       <motion.div 
         className="w-full max-w-md glass-card rounded-2xl p-8"
         initial={{ y: 20, opacity: 0 }}
