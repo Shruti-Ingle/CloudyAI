@@ -3,6 +3,7 @@ import PageWrapper from '../components/layout/PageWrapper';
 import { motion } from 'framer-motion';
 import { Database, Wand2, Search, ExternalLink, Calendar, Cloud, Sparkles } from 'lucide-react';
 import { getHistoryItems } from '../utils/history';
+import api from '../utils/api';
 
 const History = () => {
   const [filter, setFilter] = useState('all');
@@ -18,7 +19,16 @@ const History = () => {
   };
 
   useEffect(() => {
-    setHistory(getHistoryItems());
+    const fetchHistory = async () => {
+      try {
+        const response = await api.get('/generate/history');
+        setHistory(response.data || []);
+      } catch (err) {
+        console.error("Error fetching history from backend:", err);
+        setHistory(getHistoryItems());
+      }
+    };
+    fetchHistory();
   }, []);
 
   const filteredHistory = history.filter(item => filter === 'all' || item.type === filter);

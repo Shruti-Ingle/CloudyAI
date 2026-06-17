@@ -15,6 +15,10 @@ export class OllamaService {
     try {
       const response = await axios.get(`${this.baseUrl}/api/tags`, { timeout: 3000 });
       const models = response.data.models || [];
+      const customModel = models.find((m: any) => m.name.startsWith('clouddaddy-architecture'));
+      if (customModel) {
+        return customModel.name;
+      }
       if (models.length > 0) {
         return models[0].name;
       }

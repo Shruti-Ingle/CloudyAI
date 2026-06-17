@@ -9,6 +9,11 @@ import { OpenAIService } from '../services/openai.js';
 import { BedrockService } from '../services/bedrock.js';
 import { S3Service } from '../services/s3.js';
 import { DynamoService } from '../services/dynamo.js';
+import { spawn } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+
+const projectRoot = path.resolve(__dirname, '../../..');
 
 const router = Router();
 
@@ -327,25 +332,141 @@ router.get('/history', async (req: AuthenticatedRequest, res: Response) => {
       const nodes = data.nodes || [];
       const cost = data.cost || {};
 
+      const isAnalysed = data.analysis || data.file_id || item.title?.startsWith('Analysed') || item.title?.startsWith('Custom Architecture Analysis');
+
       return {
-        id: data.generation_id || item.SK || '',
-        type: 'generated',
+        id: data.generation_id || data.file_id || item.SK || '',
+        type: isAnalysed ? 'analysed' : 'generated',
         title: item.title || 'Untitled Architecture',
         platform: item.platform || 'AWS',
-        services: nodes.length,
+        services: nodes.length || (data.beforeNodes?.length || 0),
         cost: cost.total_monthly_cost || '$0.00',
         nodes: nodes,
         edges: data.edges || [],
         cost_details: cost,
-        date: item.created_at || ''
+        date: item.created_at || '',
+        issues: data.analysis?.issues?.length || data.issues?.length || 0,
+        issues_list: data.analysis?.issues || data.issues || [],
+        beforeNodes: data.beforeNodes || null,
+        beforeEdges: data.beforeEdges || null,
+        rawAnalysis: data.analysis || data.rawAnalysis || null,
+        rawArchitecture: data.rawArchitecture || null
       };
     });
 
     return res.json(historyList);
   } catch (e) {
     console.error(`Error fetching history from DynamoDB: ${e}`);
-    return res.json([]);
+    return res.status(500).json({ detail: 'Failed to fetch history from database' });
   }
+});
+
+// Active training processes tracking state in memory as fallback
+let currentTrainingStatus = {
+  status: 'idle',
+  progress: 0,
+  logs: '',
+  error: null as string | null
+};
+
+router.post('/train-architecture', async (req: AuthenticatedRequest, res: Response) => {
+  const { baseModel = 'gemma3', epochs = 5, samples = 50, ollamaUrl = 'http://localhost:11434' } = req.body;
+
+  if (currentTrainingStatus.status === 'running') {
+    return res.status(400).json({ detail: 'A model training session is already in progress' });
+  }
+
+  // Set paths for logs and status
+  const trainingDir = path.join(projectRoot, 'ml_models/architecture_generation');
+  if (!fs.existsSync(trainingDir)) {
+    fs.mkdirSync(trainingDir, { recursive: true });
+  }
+  const logPath = path.join(trainingDir, 'training.log');
+  const statusPath = path.join(trainingDir, 'training_status.json');
+
+  // Initialize status & logs
+  currentTrainingStatus = {
+    status: 'running',
+    progress: 0,
+    logs: 'Initializing training process...\n',
+    error: null
+  };
+
+  fs.writeFileSync(logPath, currentTrainingStatus.logs);
+  fs.writeFileSync(statusPath, JSON.stringify(currentTrainingStatus, null, 2));
+
+  const scriptPath = path.join(trainingDir, 'train.py');
+  console.log(`Spawning custom model training script: python3 ${scriptPath}`);
+  
+  const pyProcess = spawn('python3', [
+    scriptPath,
+    '--base-model', baseModel,
+    '--epochs', String(epochs),
+    '--samples', String(samples),
+    '--ollama-url', ollamaUrl
+  ]);
+
+  pyProcess.stdout.on('data', (data) => {
+    const output = data.toString();
+    currentTrainingStatus.logs += output;
+    
+    // Parse progress if epoch indicator is found
+    const epochMatch = output.match(/Epoch\s+(\d+)\/(\d+)/);
+    if (epochMatch) {
+      const currentEpoch = parseInt(epochMatch[1], 10);
+      const totalEpochs = parseInt(epochMatch[2], 10);
+      currentTrainingStatus.progress = Math.round((currentEpoch / totalEpochs) * 90); // cap training at 90% before completion
+    }
+
+    if (output.includes('=== MODEL TRAINING COMPLETE ===')) {
+      currentTrainingStatus.progress = 100;
+    }
+    
+    fs.appendFileSync(logPath, output);
+    fs.writeFileSync(statusPath, JSON.stringify(currentTrainingStatus, null, 2));
+  });
+
+  pyProcess.stderr.on('data', (data) => {
+    const errorOutput = data.toString();
+    currentTrainingStatus.logs += `[ERROR] ${errorOutput}`;
+    fs.appendFileSync(logPath, `[ERROR] ${errorOutput}`);
+    fs.writeFileSync(statusPath, JSON.stringify(currentTrainingStatus, null, 2));
+  });
+
+  pyProcess.on('close', (code) => {
+    if (code === 0) {
+      currentTrainingStatus.status = 'completed';
+      currentTrainingStatus.progress = 100;
+      currentTrainingStatus.logs += '\nTraining completed successfully!\n';
+    } else {
+      currentTrainingStatus.status = 'error';
+      currentTrainingStatus.error = `Python process exited with code ${code}`;
+      currentTrainingStatus.logs += `\nTraining failed with exit code ${code}\n`;
+    }
+    fs.writeFileSync(statusPath, JSON.stringify(currentTrainingStatus, null, 2));
+  });
+
+  return res.json({ status: 'started', message: 'Training session initiated.' });
+});
+
+router.get('/train-status', async (req: AuthenticatedRequest, res: Response) => {
+  const trainingDir = path.join(projectRoot, 'ml_models/architecture_generation');
+  const statusPath = path.join(trainingDir, 'training_status.json');
+  const logPath = path.join(trainingDir, 'training.log');
+
+  if (fs.existsSync(statusPath)) {
+    try {
+      const statusData = JSON.parse(fs.readFileSync(statusPath, 'utf-8'));
+      if (fs.existsSync(logPath)) {
+        statusData.logs = fs.readFileSync(logPath, 'utf-8');
+      }
+      return res.json(statusData);
+    } catch (err: any) {
+      return res.json({ ...currentTrainingStatus, error: err.message });
+    }
+  }
+
+  return res.json(currentTrainingStatus);
 });
 
 export default router;

@@ -99,27 +99,61 @@ const Generate = () => {
     const loadId = params.get('load');
 
     if (loadId) {
-      const allHistory = getHistoryItems();
-      const item = allHistory.find(h => String(h.id) === String(loadId));
+      const loadItem = async () => {
+        try {
+          // Fetch from DynamoDB backend
+          const response = await api.get('/generate/history');
+          const allHistory = response.data || [];
+          let item = allHistory.find(h => String(h.id) === String(loadId));
 
-      if (item) {
-        setNodes(item.nodes || []);
-        setEdges(item.edges || []);
+          if (!item) {
+            // Fallback to local storage
+            const localHistory = getHistoryItems();
+            item = localHistory.find(h => String(h.id) === String(loadId));
+          }
 
-        const loadedCost = item.cost_details || { total_monthly_cost: item.cost || '$0.00', services: [] };
-        setCost(loadedCost);
-        runSecurityAudit(item.nodes || [], item.edges || []);
+          if (item) {
+            setNodes(item.nodes || []);
+            setEdges(item.edges || []);
 
-        setGeneratedData(item.rawArchitecture || {
-          status: 'success',
-          platform: item.platform,
-          nodes: item.nodes || [],
-          edges: item.edges || [],
-          cost: loadedCost
-        });
-        setHasGenerated(true);
-        setPanelExpanded(true); // Immediately show canvas — don't wait for animation
-      }
+            const loadedCost = item.cost_details || { total_monthly_cost: item.cost || '$0.00', services: [] };
+            setCost(loadedCost);
+            runSecurityAudit(item.nodes || [], item.edges || []);
+
+            setGeneratedData(item.rawArchitecture || {
+              status: 'success',
+              platform: item.platform,
+              nodes: item.nodes || [],
+              edges: item.edges || [],
+              cost: loadedCost
+            });
+            setHasGenerated(true);
+            setPanelExpanded(true); // Immediately show canvas — don't wait for animation
+          }
+        } catch (err) {
+          console.error("Error loading history item from backend:", err);
+          // Ultimate local storage fallback
+          const localHistory = getHistoryItems();
+          const item = localHistory.find(h => String(h.id) === String(loadId));
+          if (item) {
+            setNodes(item.nodes || []);
+            setEdges(item.edges || []);
+            const loadedCost = item.cost_details || { total_monthly_cost: item.cost || '$0.00', services: [] };
+            setCost(loadedCost);
+            runSecurityAudit(item.nodes || [], item.edges || []);
+            setGeneratedData(item.rawArchitecture || {
+              status: 'success',
+              platform: item.platform,
+              nodes: item.nodes || [],
+              edges: item.edges || [],
+              cost: loadedCost
+            });
+            setHasGenerated(true);
+            setPanelExpanded(true);
+          }
+        }
+      };
+      loadItem();
     }
   }, []);
 
@@ -290,7 +324,7 @@ const Generate = () => {
         className={`${hasGenerated ? 'w-1/3' : 'w-full max-w-3xl mx-auto'} h-full transition-all duration-700 ease-in-out`}
         layout
       >
-        <ChatInterface onGenerate={handleGenerate} />
+        <ChatInterface onGenerate={handleGenerate} isGenerating={isGenerating} />
       </motion.div>
 
       {/* Results Column */}

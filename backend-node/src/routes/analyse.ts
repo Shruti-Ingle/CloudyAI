@@ -40,12 +40,44 @@ router.post('/architecture', async (req: AuthenticatedRequest, res: Response) =>
       const bedrockResult = await bedrockService.analyseArchitecture(architecture_data);
       if (bedrockResult && !bedrockResult.error) {
         console.log('Successfully recovered from analysis failure using AWS Bedrock fallback!');
-        return res.json({
+        const parsedResult = {
           status: 'success',
           issues: bedrockResult.issues || [],
           suggested_nodes: bedrockResult.suggested_nodes || [],
           suggested_edges: bedrockResult.suggested_edges || []
-        });
+        };
+
+        // Save custom analysis to DynamoDB
+        try {
+          const userId = req.user?.sub || 'anonymous';
+          const fileId = crypto.randomUUID();
+          let parsedNodes = null;
+          let parsedEdges = null;
+          try {
+            const parsed = JSON.parse(architecture_data);
+            if (parsed.nodes && parsed.edges) {
+              parsedNodes = parsed.nodes;
+              parsedEdges = parsed.edges;
+            }
+          } catch (e) {
+            // Ignore
+          }
+
+          const dbData = {
+            file_id: fileId,
+            issues: parsedResult.issues || [],
+            beforeNodes: parsedNodes,
+            beforeEdges: parsedEdges,
+            analysis: parsedResult
+          };
+
+          await dynamoService.saveGeneration(userId, `Custom Architecture Analysis`, 'AWS', dbData);
+          console.log(`Successfully logged Bedrock custom analysis in DynamoDB for user ${userId}`);
+        } catch (dbErr) {
+          console.warn(`Failed to perform DynamoDB saves for custom analysis: ${dbErr}`);
+        }
+
+        return res.json(parsedResult);
       }
     } catch (bedrockErr) {
       console.warn(`AWS Bedrock fallback analysis failed: ${bedrockErr}`);
@@ -57,12 +89,53 @@ router.post('/architecture', async (req: AuthenticatedRequest, res: Response) =>
     });
   }
 
-  return res.json({
+  const parsedResult = {
     status: 'success',
     issues: result.issues || [],
     suggested_nodes: result.suggested_nodes || [],
     suggested_edges: result.suggested_edges || []
-  });
+  };
+
+  // Save the custom analysis record to DynamoDB
+  try {
+    const userId = req.user?.sub || 'anonymous';
+    const fileId = crypto.randomUUID();
+    let parsedNodes = null;
+    let parsedEdges = null;
+    try {
+      const parsed = JSON.parse(architecture_data);
+      if (parsed.nodes && parsed.edges) {
+        parsedNodes = parsed.nodes;
+        parsedEdges = parsed.edges;
+      }
+    } catch (e) {
+      // Ignore
+    }
+
+    const dbData = {
+      file_id: fileId,
+      issues: parsedResult.issues || [],
+      beforeNodes: parsedNodes,
+      beforeEdges: parsedEdges,
+      analysis: parsedResult
+    };
+
+    const dynamoSuccess = await dynamoService.saveGeneration(
+      userId,
+      `Custom Architecture Analysis`,
+      'AWS',
+      dbData
+    );
+    if (dynamoSuccess) {
+      console.log(`Successfully logged custom analysis in DynamoDB for user ${userId}`);
+    } else {
+      console.warn('Warning: DynamoDB log failed for custom analysis');
+    }
+  } catch (dbErr) {
+    console.warn(`Failed to perform DynamoDB saves for custom analysis: ${dbErr}`);
+  }
+
+  return res.json(parsedResult);
 });
 
 router.post('/upload', upload.single('file'), async (req: AuthenticatedRequest, res: Response) => {

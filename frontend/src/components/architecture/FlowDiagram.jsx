@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -17,6 +17,42 @@ import {
   Server, Cpu, Database, Cloud, Globe, Shield, HardDrive, Trash2, Plus, GripVertical, ChevronLeft, ChevronRight, Settings, Info, Sliders, Check, X
 } from 'lucide-react';
 
+const areRawNodesEqual = (nodesA, nodesB) => {
+  if (!nodesA || !nodesB) return false;
+  if (nodesA.length !== nodesB.length) return false;
+  
+  const sortedA = [...nodesA].sort((a, b) => a.id.localeCompare(b.id));
+  const sortedB = [...nodesB].sort((a, b) => a.id.localeCompare(b.id));
+  
+  for (let i = 0; i < sortedA.length; i++) {
+    const a = sortedA[i];
+    const b = sortedB[i];
+    if (a.id !== b.id) return false;
+    if ((a.label || '') !== (b.label || '')) return false;
+    if (JSON.stringify(a.properties) !== JSON.stringify(b.properties)) return false;
+    if (Math.abs((a.position?.x || 0) - (b.position?.x || 0)) > 0.01) return false;
+    if (Math.abs((a.position?.y || 0) - (b.position?.y || 0)) > 0.01) return false;
+  }
+  return true;
+};
+
+const areRawEdgesEqual = (edgesA, edgesB) => {
+  if (!edgesA || !edgesB) return false;
+  if (edgesA.length !== edgesB.length) return false;
+  
+  const sortedA = [...edgesA].sort((a, b) => a.id.localeCompare(b.id));
+  const sortedB = [...edgesB].sort((a, b) => a.id.localeCompare(b.id));
+  
+  for (let i = 0; i < sortedA.length; i++) {
+    const a = sortedA[i];
+    const b = sortedB[i];
+    if (a.id !== b.id) return false;
+    if (a.source !== b.source) return false;
+    if (a.target !== b.target) return false;
+  }
+  return true;
+};
+
 const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiagramChange }) => {
   const { screenToFlowPosition } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -24,6 +60,8 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [isPaletteOpen, setIsPaletteOpen] = useState(true);
   const [inspectorNode, setInspectorNode] = useState(null);
+  const processedRawNodesRef = useRef([]);
+  const processedRawEdgesRef = useRef([]);
 
   const getServiceIcon = (label = '') => {
     const l = label.toLowerCase();
@@ -167,40 +205,21 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
 
   // Update component states on initial generation
   useEffect(() => {
-    if (!propNodes || propNodes.length === 0) return;
-
-    // Check if these nodes are already the ones currently displayed in state
-    // to avoid infinite re-render loops and repeated scaling.
-    const currentIds = nodes.map(n => n.id).sort().join(',');
-    const incomingIds = propNodes.map(n => n.id).sort().join(',');
-    
-    if (currentIds === incomingIds && nodes.length > 0) {
-      // If properties or label changed, update them without changing position coordinates
-      let changed = false;
-      const updatedNodes = nodes.map(localNode => {
-        const matchingPropNode = propNodes.find(pn => pn.id === localNode.id);
-        if (matchingPropNode) {
-          const newProps = matchingPropNode.properties || localNode.properties;
-          const newLabel = matchingPropNode.label || matchingPropNode.data?.label || localNode.label;
-          if (JSON.stringify(localNode.properties) !== JSON.stringify(newProps) || localNode.label !== newLabel) {
-            changed = true;
-            return {
-              ...localNode,
-              label: newLabel,
-              properties: newProps,
-              data: {
-                ...localNode.data,
-                label: styleRawNodes([matchingPropNode])[0].data.label
-              }
-            };
-          }
-        }
-        return localNode;
-      });
-      
-      if (changed) {
-        setNodes(updatedNodes);
+    if (!propNodes || propNodes.length === 0) {
+      if (processedRawNodesRef.current.length > 0) {
+        processedRawNodesRef.current = [];
+        processedRawEdgesRef.current = [];
+        setNodes([]);
+        setEdges([]);
       }
+      return;
+    }
+
+    // Check if these nodes and edges are already processed
+    if (
+      areRawNodesEqual(propNodes, processedRawNodesRef.current) &&
+      areRawEdgesEqual(propEdges, processedRawEdgesRef.current)
+    ) {
       return;
     }
     
@@ -249,9 +268,18 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
       };
     });
 
+    // Cache the exact raw nodes and edges we just styled
+    processedRawNodesRef.current = scaledNodes.map(n => ({
+      id: n.id,
+      position: n.position,
+      label: n.label,
+      properties: n.properties
+    }));
+    processedRawEdgesRef.current = propEdges;
+
     setNodes(styledNodes);
     setEdges(styledEdges);
-  }, [propNodes, propEdges, styleRawNodes, setNodes, setEdges, nodes]);
+  }, [propNodes, propEdges, styleRawNodes, setNodes, setEdges]);
 
   // Handle Drag Events
   const onDragStart = (event, nodeType) => {
@@ -293,11 +321,10 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
 
       setNodes((nds) => {
         const nextNodes = nds.concat(styledNewNode);
+        const nextRawNodes = nextNodes.map(n => ({ id: n.id, position: n.position, label: n.label, properties: n.properties }));
+        processedRawNodesRef.current = nextRawNodes;
         if (onDiagramChange) {
-          onDiagramChange(
-            nextNodes.map(n => ({ id: n.id, position: n.position, label: n.label, properties: n.properties })),
-            edges
-          );
+          onDiagramChange(nextRawNodes, edges);
         }
         return nextNodes;
       });
@@ -331,6 +358,7 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
 
       setEdges((eds) => {
         const nextEdges = addEdge(newEdge, eds);
+        processedRawEdgesRef.current = nextEdges;
         if (onDiagramChange) {
           onDiagramChange(
             nodes.map(n => ({ id: n.id, position: n.position, label: n.label, properties: n.properties })),
@@ -346,11 +374,14 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
   // Notify parent on manual node drag stop (sync positions!)
   const onNodeDragStop = useCallback(
     (event, node) => {
+      const nextRawNodes = nodes.map(n => 
+        n.id === node.id 
+          ? { id: n.id, position: node.position, label: n.label, properties: n.properties } 
+          : { id: n.id, position: n.position, label: n.label, properties: n.properties }
+      );
+      processedRawNodesRef.current = nextRawNodes;
       if (onDiagramChange) {
-        onDiagramChange(
-          nodes.map(n => n.id === node.id ? { ...n, position: node.position } : { id: n.id, position: n.position, label: n.label, properties: n.properties }),
-          edges
-        );
+        onDiagramChange(nextRawNodes, edges);
       }
     },
     [nodes, edges, onDiagramChange]
@@ -381,11 +412,12 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
     setSelectedNodeId(null);
     setInspectorNode(null);
 
+    const nextRawNodes = nextNodes.map(n => ({ id: n.id, position: n.position, label: n.label, properties: n.properties }));
+    processedRawNodesRef.current = nextRawNodes;
+    processedRawEdgesRef.current = nextEdges;
+
     if (onDiagramChange) {
-      onDiagramChange(
-        nextNodes.map(n => ({ id: n.id, position: n.position, label: n.label, properties: n.properties })),
-        nextEdges
-      );
+      onDiagramChange(nextRawNodes, nextEdges);
     }
   }, [selectedNodeId, nodes, edges, onDiagramChange, setNodes, setEdges]);
 
@@ -414,11 +446,11 @@ const FlowDiagramInner = ({ nodes: propNodes = [], edges: propEdges = [], onDiag
     const updatedNode = nextNodes.find(n => n.id === inspectorNode.id);
     setInspectorNode(updatedNode);
 
+    const nextRawNodes = nextNodes.map(n => ({ id: n.id, position: n.position, label: n.label, properties: n.properties }));
+    processedRawNodesRef.current = nextRawNodes;
+
     if (onDiagramChange) {
-      onDiagramChange(
-        nextNodes.map(n => ({ id: n.id, position: n.position, label: n.label, properties: n.properties })),
-        edges
-      );
+      onDiagramChange(nextRawNodes, edges);
     }
   };
 

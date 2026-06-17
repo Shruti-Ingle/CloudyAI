@@ -46,7 +46,7 @@ export class DynamoService {
       return response.Items || [];
     } catch (e) {
       console.error(`Error querying DynamoDB: ${e}`);
-      return [];
+      throw e;
     }
   }
 }

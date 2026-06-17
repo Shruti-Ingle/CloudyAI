@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { Database, Search, Wand2, Activity, Sparkles, Pencil, Check, X } from 'lucide-react';
 import { getHistoryItems } from '../utils/history';
+import api from '../utils/api';
 
 const StatCard = ({ title, value, icon: Icon, delay }) => (
   <motion.div 
@@ -29,8 +30,16 @@ const Dashboard = () => {
   const [newNameInput, setNewNameInput] = useState('');
 
   useEffect(() => {
-    // Dynamic history metrics derived directly from local storage histories
-    setHistory(getHistoryItems());
+    const fetchHistory = async () => {
+      try {
+        const response = await api.get('/generate/history');
+        setHistory(response.data || []);
+      } catch (err) {
+        console.error("Error fetching history from backend:", err);
+        setHistory(getHistoryItems());
+      }
+    };
+    fetchHistory();
   }, []);
 
   const handleSaveName = (e) => {

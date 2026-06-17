@@ -23,16 +23,41 @@ const Analyse = () => {
     const loadId = params.get('load');
 
     if (loadId) {
-      const allHistory = getHistoryItems();
-      const item = allHistory.find(h => String(h.id) === String(loadId));
+      const loadItem = async () => {
+        try {
+          // Fetch from DynamoDB backend
+          const response = await api.get('/generate/history');
+          const allHistory = response.data || [];
+          let item = allHistory.find(h => String(h.id) === String(loadId));
 
-      if (item) {
-        setBeforeNodes(item.beforeNodes || null);
-        setBeforeEdges(item.beforeEdges || null);
-        setAnalysisData(item.rawAnalysis || null);
-        setIssues(item.issues_list || item.rawAnalysis?.issues || []);
-        setHasAnalysed(true);
-      }
+          if (!item) {
+            // Fallback to local storage
+            const localHistory = getHistoryItems();
+            item = localHistory.find(h => String(h.id) === String(loadId));
+          }
+
+          if (item) {
+            setBeforeNodes(item.beforeNodes || null);
+            setBeforeEdges(item.beforeEdges || null);
+            setAnalysisData(item.rawAnalysis || null);
+            setIssues(item.issues_list || item.rawAnalysis?.issues || []);
+            setHasAnalysed(true);
+          }
+        } catch (err) {
+          console.error("Error loading analysis history item from backend:", err);
+          // Ultimate local storage fallback
+          const localHistory = getHistoryItems();
+          const item = localHistory.find(h => String(h.id) === String(loadId));
+          if (item) {
+            setBeforeNodes(item.beforeNodes || null);
+            setBeforeEdges(item.beforeEdges || null);
+            setAnalysisData(item.rawAnalysis || null);
+            setIssues(item.issues_list || item.rawAnalysis?.issues || []);
+            setHasAnalysed(true);
+          }
+        }
+      };
+      loadItem();
     }
   }, []);
 

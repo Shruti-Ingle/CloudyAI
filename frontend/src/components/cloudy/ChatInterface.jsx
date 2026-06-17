@@ -67,7 +67,7 @@ const DEFAULT_SETTINGS = {
   localModel: 'gemma3'
 };
 
-const ChatInterface = ({ onGenerate }) => {
+const ChatInterface = ({ onGenerate, isGenerating }) => {
   // Onboarding tracking
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedPlatform, setSelectedPlatform] = useState('AWS');
@@ -97,6 +97,35 @@ const ChatInterface = ({ onGenerate }) => {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
   const [availableModels, setAvailableModels] = useState(['gemma3']);
+
+  // Custom Model Training State
+  const [trainConfig, setTrainConfig] = useState({
+    baseModel: 'gemma3',
+    epochs: 5,
+    samples: 50
+  });
+  const [trainingStatus, setTrainingStatus] = useState({
+    status: 'idle',
+    progress: 0,
+    logs: '',
+    error: null
+  });
+  const logConsoleRef = useRef(null);
+  const trainingIntervalRef = useRef(null);
+
+  useEffect(() => {
+    if (logConsoleRef.current) {
+      logConsoleRef.current.scrollTop = logConsoleRef.current.scrollHeight;
+    }
+  }, [trainingStatus.logs]);
+
+  useEffect(() => {
+    return () => {
+      if (trainingIntervalRef.current) {
+        clearInterval(trainingIntervalRef.current);
+      }
+    };
+  }, []);
 
   const scrollToBottom = () => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -165,6 +194,69 @@ const ChatInterface = ({ onGenerate }) => {
       });
     } finally {
       setIsTesting(false);
+    }
+  };
+
+  const handleStartTraining = async () => {
+    if (trainingIntervalRef.current) {
+      clearInterval(trainingIntervalRef.current);
+    }
+
+    setTrainingStatus({
+      status: 'running',
+      progress: 0,
+      logs: 'Initiating custom model training...\n',
+      error: null
+    });
+
+    try {
+      await api.post('/generate/train-architecture', {
+        baseModel: trainConfig.baseModel,
+        epochs: trainConfig.epochs,
+        samples: trainConfig.samples,
+        ollamaUrl: settings.localUrl
+      });
+
+      // Poll status every 1.5s
+      trainingIntervalRef.current = setInterval(async () => {
+        try {
+          const res = await api.get('/generate/train-status');
+          const data = res.data || {};
+          setTrainingStatus({
+            status: data.status || 'running',
+            progress: data.progress || 0,
+            logs: data.logs || '',
+            error: data.error || null
+          });
+
+          if (data.status === 'completed') {
+            clearInterval(trainingIntervalRef.current);
+            trainingIntervalRef.current = null;
+            
+            // Refresh models list
+            const models = await fetchLocalModels(settings.localUrl, settings.localApiKey);
+            if (models && models.length > 0) {
+              setAvailableModels(models);
+            }
+            
+            // Auto-select the newly registered model
+            const updatedSettings = { ...settings, localModel: 'clouddaddy-architecture' };
+            saveSettings(updatedSettings);
+          } else if (data.status === 'error') {
+            clearInterval(trainingIntervalRef.current);
+            trainingIntervalRef.current = null;
+          }
+        } catch (pollErr) {
+          console.error("Error polling training status:", pollErr);
+        }
+      }, 1500);
+    } catch (err) {
+      setTrainingStatus({
+        status: 'error',
+        progress: 0,
+        logs: `Failed to start training: ${err.response?.data?.detail || err.message || err}`,
+        error: err.response?.data?.detail || err.message || 'Server error starting training process'
+      });
     }
   };
 
@@ -286,7 +378,8 @@ const ChatInterface = ({ onGenerate }) => {
           {messages.length > 1 && (
             <button
               onClick={handleGenerateClick}
-              className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-750 text-white rounded-lg text-xs font-bold shadow-md border border-indigo-400/20 transition-all transform hover:scale-105"
+              disabled={isGenerating}
+              className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-750 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 disabled:border-slate-700 disabled:cursor-not-allowed disabled:transform-none text-white rounded-lg text-xs font-bold shadow-md border border-indigo-400/20 transition-all transform hover:scale-105"
             >
               <Sparkles className="w-3.5 h-3.5" />
               Generate
@@ -342,8 +435,9 @@ const ChatInterface = ({ onGenerate }) => {
             <button
               key={plat}
               type="button"
+              disabled={isGenerating}
               onClick={() => handlePlatformChange(plat)}
-              className={`py-1.5 px-3 rounded-lg text-xs font-semibold tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 ${
+              className={`py-1.5 px-3 rounded-lg text-xs font-semibold tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
                 selectedPlatform === plat
                   ? plat === 'AWS' 
                     ? 'bg-amber-600/90 text-white shadow-md border border-amber-500/20'
@@ -394,7 +488,7 @@ const ChatInterface = ({ onGenerate }) => {
           <div className="flex items-center justify-between gap-3 bg-slate-900/60 p-1.5 rounded-xl border border-slate-800 font-Outfit">
             <button
               onClick={handleBack}
-              disabled={currentStep === 0 || isTyping}
+              disabled={currentStep === 0 || isTyping || isGenerating}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-white disabled:text-slate-600 disabled:hover:text-slate-600 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -403,7 +497,8 @@ const ChatInterface = ({ onGenerate }) => {
 
             <button
               onClick={handleRestart}
-              className="p-1.5 text-slate-500 hover:text-indigo-400 rounded-lg hover:bg-slate-850 transition-all"
+              disabled={isGenerating}
+              className="p-1.5 text-slate-500 hover:text-indigo-400 rounded-lg hover:bg-slate-850 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               title="Restart Onboarding"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -411,7 +506,7 @@ const ChatInterface = ({ onGenerate }) => {
 
             <button
               onClick={handleSkip}
-              disabled={isTyping}
+              disabled={isTyping || isGenerating}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300 disabled:text-slate-600 transition-colors"
             >
               Skip
@@ -426,16 +521,18 @@ const ChatInterface = ({ onGenerate }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
-              currentStep < 10 
-                ? `Answer question ${currentStep + 1}...`
-                : `Ask Cloudy about your ${selectedPlatform} system...`
+              isGenerating
+                ? "Generating architecture, please wait..."
+                : currentStep < 10 
+                  ? `Answer question ${currentStep + 1}...`
+                  : `Ask Cloudy about your ${selectedPlatform} system...`
             }
-            className="w-full bg-slate-900 border border-slate-700 rounded-full pl-5 pr-12 py-3 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-inner text-sm"
-            disabled={isTyping}
+            className="w-full bg-slate-900 border border-slate-700 rounded-full pl-5 pr-12 py-3 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-inner text-sm disabled:opacity-50"
+            disabled={isTyping || isGenerating}
           />
           <button 
             type="submit" 
-            disabled={!input.trim() || isTyping}
+            disabled={!input.trim() || isTyping || isGenerating}
             className="absolute right-2 p-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-full transition-colors"
           >
             <Send className="w-4 h-4" />
@@ -445,7 +542,8 @@ const ChatInterface = ({ onGenerate }) => {
         {messages.length > 1 && (
           <button
             onClick={handleGenerateClick}
-            className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-bold shadow-lg border border-indigo-500/20 transition-all flex items-center justify-center gap-2 active:scale-98"
+            disabled={isGenerating}
+            className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-xl text-xs font-bold shadow-lg border border-indigo-500/20 transition-all flex items-center justify-center gap-2 active:scale-98"
           >
             <Sparkles className="w-4 h-4" />
             Generate Architecture & Cost Estimate
@@ -594,8 +692,8 @@ const ChatInterface = ({ onGenerate }) => {
                     {testResult && (
                       <div className={`mt-3 p-3 rounded-lg border flex gap-2.5 items-start ${
                         testResult.success 
-                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' 
-                          : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
+                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' 
+                           : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
                       }`}>
                         {testResult.success ? (
                           <Check className="w-4 h-4 mt-0.5 shrink-0 text-emerald-400" />
@@ -607,6 +705,105 @@ const ChatInterface = ({ onGenerate }) => {
                     )}
                   </div>
 
+                  {/* Custom Model Training */}
+                  <div className="space-y-3 border-t border-slate-800 pt-4 font-Outfit">
+                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                      Fine-Tune / Train Architecture Model
+                    </label>
+                    
+                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3.5">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[9px] text-slate-500 font-bold uppercase">Base Model</label>
+                          <select
+                            value={trainConfig.baseModel}
+                            onChange={(e) => setTrainConfig({ ...trainConfig, baseModel: e.target.value })}
+                            className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white focus:outline-none text-xs"
+                          >
+                            {availableModels.map(model => (
+                              <option key={model} value={model}>{model}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] text-slate-500 font-bold uppercase">Training Epochs</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="20"
+                            value={trainConfig.epochs}
+                            onChange={(e) => setTrainConfig({ ...trainConfig, epochs: parseInt(e.target.value) || 5 })}
+                            className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white focus:outline-none text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleStartTraining}
+                        disabled={trainingStatus.status === 'running'}
+                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 font-bold text-white rounded-lg transition-colors flex items-center justify-center gap-1.5 text-xs shadow-md border border-indigo-500/20"
+                      >
+                        {trainingStatus.status === 'running' ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Training Custom Model... ({trainingStatus.progress}%)
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Train Custom Architect Model
+                          </>
+                        )}
+                      </button>
+
+                      {/* Training Progress Bar */}
+                      {trainingStatus.status === 'running' && (
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[9px] text-slate-500 font-bold uppercase">
+                            <span>Progress</span>
+                            <span>{trainingStatus.progress}%</span>
+                          </div>
+                          <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden p-0.5 border border-slate-850">
+                            <div 
+                              className="h-full rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all duration-300"
+                              style={{ width: `${trainingStatus.progress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Log Console Terminal Box */}
+                      {(trainingStatus.status === 'running' || trainingStatus.status === 'completed' || trainingStatus.status === 'error') && (
+                        <div className="space-y-1 pt-1">
+                          <label className="text-[9px] text-slate-500 font-bold uppercase">Training Console Logs</label>
+                          <div className="w-full h-32 bg-black border border-slate-850 rounded-lg p-2 font-mono text-[9px] text-green-400 overflow-y-auto whitespace-pre-wrap select-all scroll-smooth" ref={logConsoleRef}>
+                            {trainingStatus.logs || 'Initializing console...'}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Success / Error alerts */}
+                      {trainingStatus.status === 'completed' && (
+                        <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 flex items-start gap-2 text-[10px] leading-normal font-Outfit">
+                          <Check className="w-3.5 h-3.5 mt-0.5 shrink-0 text-emerald-400" />
+                          <div>
+                            <span className="font-bold">Training Complete!</span> Custom model <code className="text-white bg-slate-900 px-1 py-0.5 rounded">clouddaddy-architecture</code> is active. We have auto-selected it as your active model.
+                          </div>
+                        </div>
+                      )}
+
+                      {trainingStatus.status === 'error' && (
+                        <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 flex items-start gap-2 text-[10px] leading-normal font-Outfit">
+                          <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-rose-400 animate-pulse" />
+                          <div>
+                            <span className="font-bold">Training Failed:</span> {trainingStatus.error || 'Check local python environment dependencies.'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
