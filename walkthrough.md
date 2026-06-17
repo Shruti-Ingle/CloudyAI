@@ -55,3 +55,9 @@ We have successfully implemented the custom model training pipeline for cloud ar
    git push origin main
    ```
    **Result**: Pushed successfully to `https://github.com/Shruti-Ingle/CloudDaddy.git`.
+
+## Rate Limit Fallback Fix
+- The Gemini API rate-limiting response (`"I am temporarily experiencing high demand..."`) previously blocked the user from completing the onboarding questions when the Gemini API keys hit their quotas.
+- We implemented a multi-tiered fallback and heuristic question progression in `backend-node/src/routes/generate.ts` and `backend-node/src/services/gemini.ts`.
+- When rate limits or quota errors are hit, the backend will attempt an OpenAI failover; if that fails or is offline, it will fall back to a local heuristic that determines the next onboarding question based on the user's progress and cloud platform, allowing onboarding to continue smoothly.
+- These fixes have been committed and pushed to the remote repository (`main` branch) to trigger the live deployment update.
