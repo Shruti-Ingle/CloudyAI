@@ -227,7 +227,17 @@ Rules:
       }
     }
 
-    return { reply: "I am temporarily experiencing high demand from Google's free-tier rate limits. Please wait 10-15 seconds and resend your message!" };
+    // Heuristic fallback to ensure onboarding is never blocked due to rate limits
+    if (numUserMessages < questionsList.length) {
+      const currentQuestion = questionsList[numUserMessages];
+      return {
+        reply: `Got it! We'll size the layout and configure the platform parameters accordingly. Let's move to the next onboarding step:\n\n**${currentQuestion}**`
+      };
+    } else {
+      return {
+        reply: `Perfect! We have collected all the standard requirements for your ${platform} architecture. You can mention any additional preferences or click the 'Generate Architecture' button below to build your diagram.`
+      };
+    }
   }
 
   public async analyseArchitecture(architectureData: string): Promise<any> {

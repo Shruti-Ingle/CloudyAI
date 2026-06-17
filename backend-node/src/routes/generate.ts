@@ -276,12 +276,13 @@ router.post('/chat', async (req: AuthenticatedRequest, res: Response) => {
     const result = await geminiService.generateChatResponse(message, history, platform, question_index);
     replyText = result.reply || '';
   } catch (geminiErr) {
-    console.warn(`Gemini chat failed with exception: ${geminiErr}. Trying OpenAI fallback...`);
-    replyText = `I am temporarily experiencing high demand (Gemini error: ${geminiErr}). Please wait 10-15 seconds and resend your message!`;
+    console.warn(`Gemini chat failed with exception: ${geminiErr}. Falling back to OpenAI or heuristic.`);
   }
 
   const replyTextLower = replyText.toLowerCase();
-  if (replyTextLower.includes('quota') || replyTextLower.includes('rate limit')) {
+  const hasRateLimit = !replyText || replyTextLower.includes('quota') || replyTextLower.includes('rate limit') || replyTextLower.includes('high demand') || replyTextLower.includes('connection issue') || replyTextLower.includes('temporary');
+
+  if (hasRateLimit) {
     // Automatic OpenAI failover recovery fallback loop if Gemini key hits a rate limit block!
     try {
       if (openaiService.client) {
@@ -303,22 +304,60 @@ router.post('/chat', async (req: AuthenticatedRequest, res: Response) => {
     } catch (oaiErr) {
       console.warn(`OpenAI chat fallback failed: ${oaiErr}`);
     }
-  }
 
-  if (replyTextLower.includes('rate limit') || replyTextLower.includes('high demand') || replyTextLower.includes('quota')) {
-    replyText = (
-      'I tried to route your request to your local Ollama instance (http://localhost:11434), ' +
-      'but the connection was refused. I then tried falling back to Google Cloud APIs, ' +
-      'but they are currently experiencing high demand/rate limits.\n\n' +
-      '**Action Required**:\n' +
-      '1. Please make sure Ollama is running on your computer (`ollama serve`).\n' +
-      '2. If it\'s already running, ensure you have set `OLLAMA_ORIGINS=*` in your environment so your browser can connect to it.'
-    );
+    // Heuristic fallback if both Gemini and OpenAI fail or are offline
+    const QUESTIONS: Record<string, string[]> = {
+      AWS: [
+        "What is the expected scale or active user base of your system? (e.g. thousands of monthly active users, or daily peaks, to help us size your resources properly?)",
+        "How would you like to host and deliver your frontend client? (e.g. static S3 + CloudFront CDN for super-fast global delivery, or server-side rendered on AWS Amplify/App Runner?)",
+        "What compute tier fits your backend business logic best? (e.g. Serverless AWS Lambda for zero-idle scaling, containerized Amazon ECS/EKS for constant loads, or EC2 VMs?)",
+        "What kind of database fits your data model? (e.g. Relational Postgres/MySQL via Amazon RDS/Aurora, or high-throughput NoSQL via DynamoDB?)",
+        "How will clients communicate with your backend? (e.g. REST API via Amazon API Gateway, or GraphQL via AWS AppSync?)",
+        "How would you like to handle user registration, logins, and JWT token validation? (e.g. Serverless AWS Cognito user pools, or custom OAuth/Auth0?)",
+        "Does your application require persistent object storage for files, media, or backups? (e.g. Amazon S3 buckets, or shared Elastic File System?)",
+        "Do you need a low-latency caching layer to speed up database read operations? (e.g. ElastiCache Redis/Memcached, or standard DB read replicas?)",
+        "What level of network security do you require? (e.g. placing resources in private subnets, enabling AWS WAF firewall, or KMS key encryption?)",
+        "How do you plan to manage deployment and Infrastructure as Code? (e.g. Terraform, AWS CloudFormation/CDK, or standard GitHub Actions pipelines?)"
+      ],
+      GCP: [
+        "What is the expected scale or active user base of your system? (e.g. thousands of monthly active users, or daily peaks, to help us size your resources properly?)",
+        "How would you like to host and deliver your frontend client? (e.g. Firebase Hosting + Cloud CDN, or server-side rendered on Cloud Run?)",
+        "What compute tier fits your backend business logic best? (e.g. Serverless Cloud Run / Cloud Functions, containerized Google Kubernetes Engine (GKE), or Compute Engine VMs?)",
+        "What kind of database fits your data model? (e.g. Relational Postgres/MySQL via Cloud SQL/Spanner, or high-throughput NoSQL via Firestore/Bigtable?)",
+        "How will clients communicate with your backend? (e.g. Google Cloud API Gateway, or direct Cloud Run URLs?)",
+        "How would you like to handle user registration, logins, and JWT token validation? (e.g. Google Identity Platform / Firebase Auth, or custom OAuth?)",
+        "Does your application require persistent object storage for files, media, or backups? (e.g. Cloud Storage buckets?)",
+        "Do you need a low-latency caching layer to speed up database read operations? (e.g. Memorystore Redis/Memcached?)",
+        "What level of network security do you require? (e.g. Cloud Armor WAF firewall, VPC Service Controls, or Cloud KMS encryption?)",
+        "How do you plan to manage deployment and Infrastructure as Code? (e.g. Terraform, Cloud Build, or standard GitHub Actions?)"
+      ],
+      Azure: [
+        "What is the expected scale or active user base of your system? (e.g. thousands of monthly active users, or daily peaks, to help us size your resources properly?)",
+        "How would you like to host and deliver your frontend client? (e.g. Azure Static Web Apps + Front Door CDN, or App Service?)",
+        "What compute tier fits your backend business logic best? (e.g. Serverless Azure ... containerized Azure Container Apps / Azure Kubernetes Service (AKS), or App Service?)",
+        "What kind of database fits your data model? (e.g. Relational Azure SQL / Database for PostgreSQL, or high-throughput NoSQL via Cosmos DB?)",
+        "How will clients communicate with your backend? (e.g. Azure API Management (APIM), or Application Gateway?)",
+        "How would you like to handle user registration, logins, and JWT token validation? (e.g. Microsoft Entra ID / B2C, or custom OAuth?)",
+        "Does your application require persistent object storage for files, media, or backups? (e.g. Azure Blob Storage?)",
+        "Do you need a low-latency caching layer to speed up database read operations? (e.g. Azure Cache for Redis?)",
+        "What level of network security do you require? (e.g. Azure WAF firewall, Key Vault, or private endpoints?)",
+        "How do you plan to manage deployment and Infrastructure as Code? (e.g. Terraform, Azure Bicep/ARM, or Azure Pipelines/GitHub Actions?)"
+      ]
+    };
+
+    const questionsList = QUESTIONS[platform] || QUESTIONS['AWS'];
+    const numUserMessages = question_index !== null ? question_index : (history ? history.filter((msg: any) => !msg.isBot).length : 0);
+    
+    if (numUserMessages < questionsList.length) {
+      replyText = `Got it! We'll size the layout and configure the platform parameters accordingly. Let's move to the next onboarding step:\n\n**${questionsList[numUserMessages]}**`;
+    } else {
+      replyText = `Perfect! We have collected all the standard requirements for your ${platform} architecture. You can mention any additional preferences or click the 'Generate Architecture' button below to build your diagram.`;
+    }
   }
 
   return res.json({
     status: 'success',
-    reply: replyText || 'I had a temporary connection issue. How else can I help?'
+    reply: replyText
   });
 });
 
