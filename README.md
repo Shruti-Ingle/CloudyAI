@@ -1,978 +1,819 @@
-# CloudDaddy — AI Cloud Architecture Intelligence Platform
-### Master Project Brief & Developer Prompts
+<div align="center">
+
+<!-- Hero Banner -->
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f172a,50:1e3a5f,100:0ea5e9&height=200&section=header&text=CloudyAI&fontSize=72&fontColor=ffffff&fontAlignY=38&desc=AI-Powered%20Cloud%20Architecture%20Intelligence%20Platform&descAlignY=60&descSize=18&descColor=94a3b8&animation=fadeIn" width="100%"/>
+
+<!-- Badges Row 1 -->
+<p>
+  <img src="https://img.shields.io/badge/Status-Active%20Development-22c55e?style=for-the-badge&logo=statuspal&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Version-1.0.0-0ea5e9?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/License-MIT-a855f7?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/PRs-Welcome-f97316?style=for-the-badge&logo=git&logoColor=white"/>
+</p>
+
+<!-- Badges Row 2 -->
+<p>
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Next.js-14-000000?style=flat-square&logo=next.js&logoColor=white"/>
+  <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript&logoColor=white"/>
+  <img src="https://img.shields.io/badge/FastAPI-0.111+-009688?style=flat-square&logo=fastapi&logoColor=white"/>
+  <img src="https://img.shields.io/badge/AWS-Bedrock-FF9900?style=flat-square&logo=amazon-aws&logoColor=white"/>
+  <img src="https://img.shields.io/badge/LangGraph-Agents-1C3C3C?style=flat-square&logo=langchain&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Terraform-IaC-7B42BC?style=flat-square&logo=terraform&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Docker-Containerized-2496ED?style=flat-square&logo=docker&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Kubernetes-EKS-326CE5?style=flat-square&logo=kubernetes&logoColor=white"/>
+</p>
+
+<br/>
+
+> **"From Idea to Infrastructure — Intelligently Architected."**
+>
+> CloudyAI is an enterprise-grade, AI-native platform that transforms plain English descriptions into production-ready cloud architectures — complete with cost forecasts, security audits, and self-healing automation agents.
+
+<br/>
+
+[**🚀 Live Demo**](https://cloud-daddy.vercel.app/ ) · [**📖 Documentation**](#) · [**🐛 Report a Bug**](../../issues) · [**✨ Request a Feature**](../../issues) · [**💬 Discussions**](../../discussions)
+
+</div>
 
 ---
 
-## Table of Contents
+## 📌 Table of Contents
 
-1. [What is CloudDaddy?](#1-what-is-clouddaddy)
-2. [Core Features](#2-core-features)
-3. [System Architecture Overview](#3-system-architecture-overview)
-4. [Tech Stack at a Glance](#4-tech-stack-at-a-glance)
-5. [Team Structure & Ownership](#5-team-structure--ownership)
-6. [Repository & Folder Structure](#6-repository--folder-structure)
-7. [Master Prompt — All Developers](#7-master-prompt--all-developers)
-8. [Developer 1 — AWS & DevOps Engineer](#8-developer-1--aws--devops-engineer)
-9. [Developer 2 — Frontend Engineer](#9-developer-2--frontend-engineer)
-10. [Developer 3 — Backend Engineer](#10-developer-3--backend-engineer)
-11. [Developer 4 — AI/ML Engineer](#11-developer-4--aiml-engineer)
-12. [GitHub Workflow & Branching Strategy](#12-github-workflow--branching-strategy)
-13. [MVP Build Order](#13-mvp-build-order)
-
----
-
-## 1. What is CloudDaddy?
-
-**CloudDaddy** is an enterprise-grade AI Cloud Architecture Intelligence Platform that helps organizations design, optimize, secure, and monitor cloud infrastructure — automatically — using Agentic AI, LLM reasoning, and custom-trained ML models.
-
-It is not a chatbot. It is a full-stack intelligent platform where users describe their cloud requirements or upload existing infrastructure configs (Terraform, CloudFormation, YAML, Kubernetes), and the system runs a multi-agent AI pipeline that:
-
-- Designs or analyzes cloud architecture
-- Predicts infrastructure costs using ML
-- Detects security vulnerabilities
-- Forecasts traffic and capacity needs
-- Diagnoses incidents and suggests root cause fixes
-- Recommends and optionally executes self-healing automations
-
-The platform targets cloud architects, DevOps teams, and engineering leads inside mid-to-large companies who need intelligent cloud decision support beyond what standard monitoring tools provide.
-
-**Target users:** Cloud architects, DevOps engineers, CTOs, infrastructure leads at tech companies.
-
-**Positioning:** AI-native cloud intelligence — think "an AI cloud advisor that runs 24/7 inside your infrastructure."
+- [What is CloudyAI?](#-what-is-cloudyai)
+- [Core Features](#-core-features)
+- [System Architecture](#-system-architecture)
+- [Tech Stack](#-tech-stack)
+- [Application Flow](#-application-flow)
+- [AI Agent Pipeline](#-ai-agent-pipeline)
+- [ML Models](#-ml-models)
+- [Repository Structure](#-repository-structure)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-variables)
+- [Team](#-team)
+- [Branch Strategy](#-branch-strategy)
+- [Roadmap](#-roadmap)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
-## 2. Core Features
+## 🌩 What is CloudyAI?
 
-### 2.1 AI Architecture Designer
-Users input business requirements such as expected traffic, budget, latency constraints, compliance needs, storage type, and workload characteristics. The AI agent designs a full cloud architecture recommendation including compute layer, database selection, networking, autoscaling, caching, CDN, and VPC layout. Output includes an architecture diagram, cost estimate, tradeoff analysis, and a written explanation.
+**CloudyAI** (internal codename: *CloudDaddy*) is a production-grade, full-stack **AI Cloud Architecture Intelligence Platform**. It is not a chatbot. It is a multi-agent, multi-module intelligent system that allows organizations to:
 
-### 2.2 AI Infra Analyzer
-Users upload Terraform HCL files, CloudFormation templates, Kubernetes YAML, or architecture documents. The AI parses and analyzes these configs to detect overprovisioned resources, public storage buckets, missing WAF, absent autoscaling, weak IAM policies, insecure security groups, and redundant or wasteful services. Output is a structured risk and optimization report.
+- 🏗️ **Design** full cloud architectures from plain-English business requirements
+- 🔍 **Analyze** uploaded infrastructure configs (Terraform, CloudFormation, Kubernetes YAML)
+- 💸 **Predict** monthly cloud costs using custom-trained ML models before a single resource is provisioned
+- 🔐 **Audit** security posture across IAM, networking, storage, and encryption configurations
+- 📈 **Forecast** traffic spikes, CPU exhaustion, and capacity limits before they occur
+- 🚨 **Diagnose** incidents through agentic root-cause analysis reading CloudWatch logs in real time
+- 🤖 **Automate** self-healing workflows — scaling, rollbacks, credential rotation — with human-approval gates
 
-### 2.3 Cost Optimization Engine (ML)
-ML models trained on infrastructure and billing data predict monthly AWS spend, traffic growth, and future cost trends. The AI layer then recommends Reserved Instances, Spot Instance usage, right-sizing candidates, serverless alternatives, and cache layers. Models used: XGBoost, Random Forest for prediction; Prophet for time-series cost forecasting.
+**Target Users:** Cloud architects · DevOps engineers · CTOs · Infrastructure leads at mid-to-large engineering organizations
 
-### 2.4 Security Risk Intelligence
-An AI security audit agent checks IAM policies, open ports, exposed APIs, public S3 buckets, missing KMS encryption, weak security group rules, and secret leaks. An ML anomaly detection model (Isolation Forest) flags unusual infrastructure access patterns and configuration deviations.
-
-### 2.5 Incident Response Agent
-A fully agentic AI feature. When an outage or degradation occurs, the Incident Agent reads CloudWatch logs and metrics, performs root cause analysis, generates a structured incident summary, recommends immediate fixes, and can alert the team via Slack or PagerDuty. Example output: "High CPU caused by traffic spike. Recommend scaling from 4 to 12 instances via autoscaling group."
-
-### 2.6 Architecture Q&A Copilot
-A RAG-based (Retrieval-Augmented Generation) chat assistant trained on AWS documentation, architecture best practices, and internal knowledge bases. Users ask questions like "Why use ECS over EKS?" or "What DB should I use for a real-time chat app?" and get grounded, cited answers.
-
-### 2.7 Predictive Capacity Planning
-ML models predict traffic spikes, CPU exhaustion, memory overflow, and storage limits before they happen. Models used: LSTM for sequence prediction, XGBoost for regression, Prophet for seasonal forecasting. Output is a dashboard with future capacity projections and recommended pre-scaling actions.
-
-### 2.8 Self-Healing Automation Agent
-The most advanced agentic feature. When triggered, this agent can automatically restart unhealthy services, scale EC2 instances, rotate credentials, trigger deployment rollbacks, and open Jira tickets. Human approval mode can be toggled on or off per action type.
+**Positioning:** An AI cloud advisor that runs 24/7 inside your infrastructure — not a dashboard, not a chatbot — an intelligent peer.
 
 ---
 
-## 3. System Architecture Overview
+## ✨ Core Features
 
+<table>
+<tr>
+<td width="50%">
+
+### 🏗️ AI Architecture Designer
+Describe your application in plain English. CloudyAI generates a complete cloud architecture — compute layer, database selection, networking, autoscaling, CDN, caching, and VPC layout — with an interactive diagram, cost estimate, and tradeoff analysis.
+
+</td>
+<td width="50%">
+
+### 🔍 Infrastructure Analyzer
+Upload Terraform HCL, CloudFormation templates, or Kubernetes YAML. The AI parses and analyzes configs to detect over-provisioned resources, exposed buckets, missing WAF, insecure IAM policies, and redundant services.
+
+</td>
+</tr>
+<tr>
+<td>
+
+### 💸 Cost Optimization Engine (ML)
+XGBoost + Random Forest models predict monthly AWS spend. Prophet models forecast future cost trends. AI recommendations cover Reserved Instances, Spot usage, right-sizing, serverless alternatives, and cache layers.
+
+</td>
+<td>
+
+### 🔐 Security Risk Intelligence
+An AI security audit agent checks IAM policies, open ports, exposed APIs, public S3 buckets, missing KMS encryption, and secret leaks. Isolation Forest ML flags unusual infrastructure access patterns in real time.
+
+</td>
+</tr>
+<tr>
+<td>
+
+### 🚨 Incident Response Agent
+When degradation occurs, the Incident Agent reads CloudWatch logs, performs root-cause analysis, and generates a structured incident summary with immediate fix recommendations — optionally alerting via Slack or PagerDuty.
+
+</td>
+<td>
+
+### 💬 Architecture Q&A Copilot
+A RAG-based chat assistant trained on AWS documentation and architecture best practices. Ask "Why use ECS over EKS?" and receive grounded, cited answers. Streaming responses via SSE. Context-aware conversation history.
+
+</td>
+</tr>
+<tr>
+<td>
+
+### 📈 Predictive Capacity Planning
+LSTM, XGBoost, and Prophet models predict traffic spikes, CPU exhaustion, memory overflow, and storage limits ahead of time. Output is a dashboard with future capacity projections and recommended pre-scaling actions.
+
+</td>
+<td>
+
+### 🤖 Self-Healing Automation Agent
+The most advanced feature. When triggered, this agent can automatically restart unhealthy services, scale EC2 instances, rotate credentials, trigger deployment rollbacks, and open Jira tickets — with configurable human-approval gates.
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🏛️ System Architecture
+
+```mermaid
+graph TB
+    subgraph Client["🌐 Client Layer"]
+        UI[Next.js 14 App<br/>React Flow · Recharts · Framer Motion]
+    end
+
+    subgraph Edge["⚡ Edge & Routing"]
+        CF[CloudFront CDN]
+        R53[Route 53]
+        APIGW[API Gateway]
+        ALB[Application Load Balancer]
+    end
+
+    subgraph Compute["🖥️ Compute Layer — ECS / EKS"]
+        API[FastAPI Core API<br/>Python 3.11]
+        CEL[Celery Workers<br/>Async Job Queue]
+        WS[WebSocket Service<br/>Real-time Status]
+    end
+
+    subgraph AI["🤖 AI & ML Layer"]
+        BED[AWS Bedrock<br/>Claude · Llama · Titan]
+        LG[LangGraph Agents<br/>Multi-Agent Orchestrator]
+        SM[SageMaker Endpoints<br/>Cost · Anomaly · Capacity]
+        OS[OpenSearch<br/>Vector DB — RAG]
+    end
+
+    subgraph Data["🗄️ Data Layer"]
+        DDB[DynamoDB<br/>Users · Sessions · Jobs]
+        RDS[RDS PostgreSQL<br/>Analytics]
+        S3[S3<br/>Files · Reports · Artifacts]
+        RD[ElastiCache Redis<br/>Queue · Cache]
+    end
+
+    subgraph Security["🔐 Security & Auth"]
+        COG[Cognito<br/>SSO · MFA · RBAC]
+        KMS[KMS Encryption]
+        WAF[WAF + Shield]
+        SM2[Secrets Manager]
+    end
+
+    subgraph Observability["📊 Observability"]
+        CW[CloudWatch + X-Ray]
+        PROM[Prometheus + Grafana]
+        MLF[MLflow Tracking]
+    end
+
+    UI --> CF --> R53
+    CF --> APIGW --> ALB --> API
+    API --> CEL
+    CEL --> RD
+    API --> LG --> BED
+    LG --> SM
+    API --> OS
+    API --> DDB
+    API --> S3
+    API --> RDS
+    CEL --> SM
+    API --> COG
+    API --> CW
+    CEL --> CW
 ```
-User (Browser)
-     │
-     ▼
-CloudFront + Route53
-     │
-     ▼
-API Gateway
-     │
-     ▼
-Application Load Balancer
-     │
-     ▼
-ECS / EKS (Backend Services)
-     │
-  ┌──┴───────────────────────┐
-  │                          │
-FastAPI (Core API)      Celery Workers (Async)
-  │                          │
-  │                     Redis (Task Queue)
-  │
-  ├── AWS Bedrock (LLM — Claude / Llama / Titan)
-  ├── LangGraph Agents (Multi-Agent Orchestration)
-  ├── SageMaker Endpoints (Custom ML Models)
-  ├── OpenSearch (Vector DB for RAG)
-  ├── DynamoDB (Users, Sessions, Chat History)
-  ├── S3 (Uploaded Files, Reports, Diagrams)
-  ├── CloudWatch + X-Ray (Monitoring)
-  └── Cognito (Authentication & RBAC)
+
+---
+
+## 🛠️ Tech Stack
+
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>🎨 Frontend</b></td>
+<td>
+
+`Next.js 14` `TypeScript` `TailwindCSS` `shadcn/ui` `React Flow` `Recharts` `Framer Motion`
+
+</td>
+<td>App router UI, interactive canvas, charts, animations</td>
+</tr>
+<tr>
+<td><b>⚙️ Backend</b></td>
+<td>
+
+`FastAPI` `Python 3.11` `Celery` `Redis` `WebSockets` `Pydantic`
+
+</td>
+<td>REST API, async workers, SSE streaming, job queue</td>
+</tr>
+<tr>
+<td><b>🔐 Auth</b></td>
+<td>
+
+`AWS Cognito` `JWKS RS256` `MFA` `RBAC`
+
+</td>
+<td>SSO, token management, role-based access control</td>
+</tr>
+<tr>
+<td><b>🤖 LLM</b></td>
+<td>
+
+`AWS Bedrock` `Claude 3 Sonnet` `Llama 3 70B` `Amazon Titan`
+
+</td>
+<td>Architecture generation, analysis, Q&A, incident response</td>
+</tr>
+<tr>
+<td><b>🧠 AI Agents</b></td>
+<td>
+
+`LangGraph` `LangChain` `PromptTemplates` `Structured Output`
+
+</td>
+<td>Multi-agent orchestration, conditional routing, stateful pipelines</td>
+</tr>
+<tr>
+<td><b>🔎 RAG</b></td>
+<td>
+
+`OpenSearch` (vector engine) `Titan Embeddings` `LangChain`
+
+</td>
+<td>Knowledge retrieval, AWS doc search, architecture Q&A</td>
+</tr>
+<tr>
+<td><b>📊 ML Models</b></td>
+<td>
+
+`XGBoost` `Random Forest` `Prophet` `LSTM (Keras)` `Isolation Forest`
+
+</td>
+<td>Cost prediction, anomaly detection, capacity forecasting</td>
+</tr>
+<tr>
+<td><b>🧪 MLOps</b></td>
+<td>
+
+`AWS SageMaker` `MLflow` `SageMaker Pipelines` `Model Monitor`
+
+</td>
+<td>Training, deployment, drift detection, experiment tracking</td>
+</tr>
+<tr>
+<td><b>🗄️ Databases</b></td>
+<td>
+
+`DynamoDB` `RDS PostgreSQL` `ElastiCache Redis`
+
+</td>
+<td>Primary data store, analytics, caching & task queue</td>
+</tr>
+<tr>
+<td><b>☁️ Infrastructure</b></td>
+<td>
+
+`Terraform` `Docker` `Kubernetes (EKS)` `ECS` `ECR`
+
+</td>
+<td>Infrastructure as Code, containerization, orchestration</td>
+</tr>
+<tr>
+<td><b>🚀 CI/CD</b></td>
+<td>
+
+`GitHub Actions` `AWS CodePipeline` `CodeBuild`
+
+</td>
+<td>Automated testing, building, and deployments</td>
+</tr>
+<tr>
+<td><b>📡 Networking</b></td>
+<td>
+
+`VPC` `API Gateway` `Route53` `CloudFront` `ALB` `WAF` `Shield`
+
+</td>
+<td>Secure, globally distributed, DDoS-protected network layer</td>
+</tr>
+<tr>
+<td><b>📊 Observability</b></td>
+<td>
+
+`CloudWatch` `X-Ray` `Prometheus` `Grafana` `MLflow`
+
+</td>
+<td>Distributed tracing, dashboards, alerting, model monitoring</td>
+</tr>
+<tr>
+<td><b>🔑 Security</b></td>
+<td>
+
+`IAM` `KMS` `Secrets Manager` `WAF` `Shield` `Cognito`
+
+</td>
+<td>Least-privilege access, encryption at rest/transit, DDoS protection</td>
+</tr>
+<tr>
+<td><b>📨 Messaging</b></td>
+<td>
+
+`AWS SQS` `AWS SNS`
+
+</td>
+<td>Async job dispatch, incident alerting</td>
+</tr>
+</tbody>
+</table>
+
+---
+
+## 🗺️ Application Flow
+
+```mermaid
+flowchart LR
+    A([🌐 Landing Page]) --> B([🔐 Login / Register\nAWS Cognito])
+    B --> C([📊 Dashboard\nStats & Activity])
+    C --> D([⚡ Generate\nCloud Provider + AI Chat])
+    C --> E([🔍 Analyze\nUpload Config])
+    C --> F([📜 History\nPast Architectures])
+
+    D --> G([🖼️ Diagram Canvas\nReact Flow Interactive])
+    G --> H([💰 Cost Estimate\nML Prediction])
+    G --> I([🔐 Security Audit\nAI Findings])
+    G --> J([📄 JSON View\nRaw Architecture])
+
+    E --> K([📋 Analysis Report\nSeverity-Ranked Findings])
+    K --> L([✅ Suggested Architecture\nOptimized Comparison])
 ```
 
 ---
 
-## 4. Tech Stack at a Glance
+## 🤖 AI Agent Pipeline
 
-| Layer | Technology |
-|---|---|
-| Frontend | React.js, Next.js 14, TypeScript, TailwindCSS, shadcn/ui, React Flow, Recharts, Framer Motion |
-| Backend | FastAPI, Python 3.11, Celery, Redis, WebSockets |
-| Auth | AWS Cognito (SSO, MFA, RBAC) |
-| AI — LLM | AWS Bedrock (Claude, Llama, Titan) |
-| AI — Agents | LangGraph |
-| AI — RAG | OpenSearch (vector engine), Bedrock Embeddings |
-| ML Models | XGBoost, Random Forest, Prophet, LSTM, Isolation Forest |
-| ML Platform | AWS SageMaker, MLflow |
-| Database | AWS DynamoDB (primary), AWS RDS PostgreSQL (analytics) |
-| Storage | AWS S3 |
-| Cache | Redis (ElastiCache) |
-| Monitoring | CloudWatch, X-Ray, Prometheus, Grafana |
-| Infrastructure | Terraform, Docker, Kubernetes (EKS) |
-| CI/CD | GitHub Actions, AWS CodePipeline, CodeBuild, ECR |
-| Security | IAM, KMS, WAF, Secrets Manager, AWS Shield |
-| Messaging | SQS, SNS |
-| Networking | VPC, API Gateway, Route53, CloudFront, ELB |
+CloudyAI's intelligence is powered by a **LangGraph multi-agent system** with 7 specialized agents orchestrated by a central StateGraph router.
 
----
+```mermaid
+flowchart TD
+    IN[📥 User Input\nRequirements / Config / Incident] --> ORC
 
-## 5. Team Structure & Ownership
+    subgraph ORC["🎯 LangGraph Orchestrator — StateGraph Router"]
+        direction LR
+        R1{Task Type?}
+    end
 
-| Developer | Role | Primary Ownership |
+    ORC --> A1
+    ORC --> A3
+    ORC --> A4
+    ORC --> A5
+
+    subgraph AGENTS["🤖 Specialized AI Agents"]
+        A1[🏗️ Architecture Agent\nWell-Architected Design]
+        A2[🔐 Security Agent\nRisk Scoring & Remediation]
+        A3[💰 Cost Agent\nOptimization Recommendations]
+        A4[📊 Monitoring Agent\nCloudWatch Analysis]
+        A5[🚨 Incident Agent\nRoot Cause Analysis]
+        A6[⚙️ Automation Agent\nSelf-Healing Action Plan]
+        A7[📄 Documentation Agent\nReport Synthesis]
+    end
+
+    A1 --> A2
+    A2 --> A3
+    A4 --> A5
+    A5 --> A6
+    A1 & A2 & A3 & A5 & A6 --> A7
+
+    A7 --> OUT[📊 Structured Report\nMarkdown + JSON]
+
+    subgraph BED["☁️ AWS Bedrock"]
+        B1[Claude 3 Sonnet]
+        B2[Llama 3 70B]
+        B3[Titan Embeddings]
+    end
+
+    AGENTS <--> BED
+```
+
+### Agent Responsibilities
+
+| Agent | Input | Output |
 |---|---|---|
-| Dev 1 | AWS & DevOps Engineer | All AWS infra, Terraform, EKS/ECS, CI/CD, MLOps, Monitoring |
-| Dev 2 | Frontend Engineer | Next.js app, all UI modules, API integration, auth flow |
-| Dev 3 | Backend Engineer | FastAPI, all API endpoints, auth integration, file processing, Celery |
-| Dev 4 | AI/ML Engineer | LangGraph agents, RAG pipeline, Bedrock, SageMaker ML models |
+| 🏗️ **Architecture Agent** | Business requirements or parsed config | React Flow diagram JSON, explanation, cost estimate |
+| 🔐 **Security Agent** | Architecture or config dict | Findings list with severity scores and remediation steps |
+| 💰 **Cost Agent** | Architecture output | Current vs. optimized cost estimate, savings potential |
+| 📊 **Monitoring Agent** | CloudWatch metrics data | Health status, alerts, anomaly flags |
+| 🚨 **Incident Agent** | Log lines, metrics, description | Root cause, timeline, recommended actions |
+| ⚙️ **Automation Agent** | Incident summary or recommendations | Action plan with human-approval flags |
+| 📄 **Documentation Agent** | All agent outputs | Unified markdown report with executive summary |
 
 ---
 
-## 6. Repository & Folder Structure
+## 📊 ML Models
+
+Three custom-trained machine learning models are deployed on **AWS SageMaker** and integrated into the platform.
+
+```mermaid
+graph LR
+    subgraph Models["📦 SageMaker Endpoints"]
+        M1["💸 Cost Prediction\nXGBoost · Random Forest\nInput: instance types, storage, traffic\nOutput: predicted monthly cost + CI"]
+        M2["🔍 Anomaly Detection\nIsolation Forest · One-Class SVM\nInput: CPU, memory, error rate, latency\nOutput: anomaly score + contributing features"]
+        M3["📈 Capacity Forecasting\nLSTM · Prophet\nInput: historical time-series metrics\nOutput: 72h forecast with bounds"]
+    end
+
+    subgraph MLOps["⚙️ MLOps Pipeline"]
+        T[SageMaker Pipelines\nPreprocess → Train → Evaluate → Register]
+        MF[MLflow Tracking\nExperiments, Metrics, Artifacts]
+        MM[SageMaker Model Monitor\nData + Concept Drift Detection]
+    end
+
+    M1 & M2 & M3 --> MLOps
+```
+
+| Model | Algorithm | Key Features | Target Metric |
+|---|---|---|---|
+| **Cost Prediction** | XGBoost + Random Forest | instance type, vCPU, RAM, storage, bandwidth | `monthly_cost_usd` (RMSE / MAE / R²) |
+| **Anomaly Detection** | Isolation Forest + One-Class SVM | CPU, memory, request rate, error rate, p99 latency | `is_anomaly`, `anomaly_score` (F1) |
+| **Capacity Forecasting** | LSTM (Keras) + Prophet | timestamp, CPU/memory/storage time series | 72h forecast with confidence bounds (MAPE) |
+
+---
+
+## 📁 Repository Structure
 
 ```
-clouddaddy/
-├── frontend/
+cloudyai/
+│
+├── 🎨 frontend/                    # Next.js 14 App Router application
 │   ├── app/
-│   ├── components/
-│   │   ├── dashboard/
-│   │   ├── architect-builder/
-│   │   ├── chat-copilot/
-│   │   └── analytics/
-│   ├── lib/
-│   ├── hooks/
-│   └── public/
+│   │   ├── dashboard/              # Main dashboard with KPI cards
+│   │   ├── builder/                # React Flow architecture canvas
+│   │   ├── analyzer/               # Config upload & analysis results
+│   │   ├── copilot/                # Streaming RAG chat interface
+│   │   ├── analytics/              # Cost & capacity charts
+│   │   ├── security/               # Security audit findings
+│   │   └── incidents/              # Incident center & history
+│   ├── components/                 # Reusable UI components
+│   ├── lib/api/                    # Axios/fetch wrapper + typed interfaces
+│   ├── hooks/                      # Custom React hooks
+│   └── stores/                     # Zustand global state
 │
-├── backend/
-│   ├── api/
-│   │   └── routes/
-│   ├── auth/
-│   ├── services/
-│   ├── workers/
-│   └── core/
+├── ⚙️ backend/                     # FastAPI application
+│   ├── api/routes/                 # All API endpoint handlers
+│   ├── auth/                       # Cognito JWT verification + RBAC
+│   ├── services/                   # S3, DynamoDB, SageMaker, CloudWatch wrappers
+│   ├── workers/                    # Celery async task definitions
+│   ├── schemas/                    # Pydantic request/response models
+│   └── core/                       # Config, dependencies, exceptions
 │
-├── ai_agents/
-│   ├── architecture_agent/
-│   ├── security_agent/
-│   ├── cost_agent/
-│   ├── incident_agent/
-│   ├── automation_agent/
-│   ├── documentation_agent/
-│   └── orchestrator/
+├── 🤖 ai_agents/                   # LangGraph multi-agent system
+│   ├── orchestrator/               # StateGraph router (graph.py)
+│   ├── architecture_agent/         # Cloud design agent
+│   ├── security_agent/             # Risk scoring agent
+│   ├── cost_agent/                 # Cost optimization agent
+│   ├── monitoring_agent/           # CloudWatch analysis agent
+│   ├── incident_agent/             # Root-cause analysis agent
+│   ├── automation_agent/           # Self-healing action planner
+│   ├── documentation_agent/        # Report synthesis agent
+│   ├── bedrock_client.py           # Reusable Bedrock LLM client
+│   └── prompts/                    # All system prompts (.txt)
 │
-├── ml_models/
-│   ├── cost_prediction/
-│   ├── anomaly_detection/
-│   └── capacity_forecasting/
+├── 🧪 ml_models/                   # SageMaker ML models
+│   ├── cost_prediction/            # XGBoost + Random Forest
+│   ├── anomaly_detection/          # Isolation Forest + One-Class SVM
+│   └── capacity_forecasting/       # LSTM + Prophet
 │
-├── rag_pipeline/
-│   ├── ingestion/
-│   ├── embeddings/
-│   └── retrieval/
+├── 🔎 rag_pipeline/                # RAG knowledge system
+│   ├── ingestion/                  # Document loaders & chunking
+│   ├── embeddings/                 # Bedrock Titan embeddings + OpenSearch indexing
+│   └── retrieval/                  # Similarity search + RAG chain
 │
-├── infra/
+├── 🏗️ infra/                       # Infrastructure as Code
 │   ├── terraform/
-│   │   ├── modules/
-│   │   ├── environments/
-│   │   │   ├── dev/
-│   │   │   └── prod/
-│   │   └── main.tf
+│   │   ├── modules/                # vpc, ecs, eks, rds, dynamodb, s3, cognito, etc.
+│   │   └── environments/
+│   │       ├── dev/                # Development .tfvars
+│   │       └── prod/               # Production .tfvars
 │   └── kubernetes/
-│       ├── deployments/
-│       ├── services/
-│       └── ingress/
+│       ├── deployments/            # Backend, Celery, RAG, Agent services
+│       ├── services/               # ClusterIP + Ingress configs
+│       └── ingress/                # ALB ingress controller
 │
-├── monitoring/
-│   ├── grafana/
-│   └── prometheus/
+├── 📊 monitoring/
+│   ├── grafana/                    # Dashboard JSON definitions
+│   └── prometheus/                 # Scrape configs for EKS pods
 │
-├── .github/
-│   └── workflows/
+├── 🔄 .github/workflows/           # CI/CD pipelines
+│   ├── ci.yml                      # Lint, type-check, tests on PR
+│   ├── deploy-backend.yml          # ECR push + ECS/EKS update
+│   ├── deploy-frontend.yml         # Next.js build + S3 + CloudFront
+│   ├── deploy-infra.yml            # Terraform plan + apply
+│   └── deploy-ml.yml               # SageMaker model packaging + deploy
 │
-└── docs/
+└── 📖 docs/                        # Architecture documentation
 ```
 
 ---
 
-## 7. Master Prompt — All Developers
+## 🚀 Getting Started
 
-> This prompt is identical for all four developers. Paste it at the start of every coding session with your AI assistant.
+### Prerequisites
 
----
-
-```
-You are building CloudDaddy — an enterprise-grade AI Cloud Architecture Intelligence Platform.
-
-CloudDaddy is a production-ready, full-stack AI platform that helps organizations design, analyze, optimize, secure, and monitor AWS cloud infrastructure using Agentic AI, LLM reasoning via AWS Bedrock, RAG-based knowledge retrieval via OpenSearch, and custom-trained ML models deployed on AWS SageMaker.
-
-The platform is not a chatbot. It is a multi-module AI system with the following core capabilities:
-- AI-powered cloud architecture design from business requirements
-- Infrastructure config analysis (Terraform, CloudFormation, YAML, Kubernetes)
-- ML-based cost prediction and optimization
-- AI security auditing and anomaly detection
-- Predictive capacity planning using LSTM, XGBoost, and Prophet
-- Agentic incident response and root cause analysis
-- RAG-based architecture Q&A copilot
-- Self-healing automation agents
-
-TECH STACK:
-- Frontend: Next.js 14, TypeScript, TailwindCSS, shadcn/ui, React Flow, Recharts, Framer Motion
-- Backend: FastAPI (Python 3.11), Celery, Redis
-- Auth: AWS Cognito (SSO, MFA, RBAC)
-- LLM: AWS Bedrock (Claude 3 / Llama / Titan)
-- Agents: LangGraph
-- RAG: OpenSearch vector engine + Bedrock Embeddings
-- ML: XGBoost, Random Forest, Prophet, LSTM, Isolation Forest trained and deployed via SageMaker
-- DB: DynamoDB (primary), RDS PostgreSQL (analytics)
-- Storage: S3
-- Cache: Redis (ElastiCache)
-- IaC: Terraform
-- Containers: Docker, Kubernetes (EKS)
-- CI/CD: GitHub Actions + AWS CodePipeline + ECR
-- Monitoring: CloudWatch, Prometheus, Grafana
-
-STANDARDS:
-- All code must be production-grade, modular, and clean
-- Never include comments in any code
-- Use environment variables for all secrets and config values
-- Write typed, linted code at all times (TypeScript strict mode, Python type hints)
-- Every module must have a corresponding README.md
-- Push only to your assigned branch, never directly to main
-- Follow conventional commits: feat:, fix:, refactor:, docs:, chore:
-- Write unit tests for all business logic
-
-This is a resume-worthy, AI/ML company-level project. Every piece of code you write should reflect production engineering standards.
+```bash
+node >= 20.x
+python >= 3.11
+docker >= 24.x
+terraform >= 1.7.x
+aws-cli >= 2.x (configured with appropriate IAM permissions)
 ```
 
----
+### 1. Clone the Repository
 
-## 8. Developer 1 — AWS & DevOps Engineer
-
-### Role Summary
-You own everything infrastructure. No service runs in production without going through your Terraform configs, your Docker images, your Kubernetes manifests, and your CI/CD pipelines. You are also responsible for the MLOps layer that serves ML models via SageMaker.
-
-### Tech Ownership
-- Terraform (all AWS resources)
-- ECS / EKS cluster setup and management
-- VPC, subnets, security groups, NACLs
-- API Gateway, Load Balancer, Route53, CloudFront
-- IAM roles, KMS keys, WAF, Secrets Manager, Shield
-- AWS Cognito (infrastructure setup, not app integration)
-- DynamoDB, RDS, S3, ElastiCache (Redis), SQS, SNS — provisioning only
-- OpenSearch cluster (vector engine enabled)
-- AWS SageMaker infrastructure (training jobs, endpoints)
-- MLflow tracking server
-- ECR repositories for Docker images
-- GitHub Actions CI/CD workflows
-- AWS CodePipeline, CodeBuild
-- CloudWatch dashboards, alarms, log groups
-- X-Ray tracing setup
-- Prometheus + Grafana deployment on EKS
-- Docker and Kubernetes configs for all services
-
-### Your Branch
-`dev/devops`
-
-### Personalized Prompt
-
+```bash
+git clone https://github.com/your-org/cloudyai.git
+cd cloudyai
 ```
-You are the AWS & DevOps Engineer for CloudDaddy.
 
-Your job is to build and maintain all infrastructure that CloudDaddy runs on. You do not write application code — you write the infrastructure that hosts it.
+### 2. Frontend Setup
 
-YOUR DELIVERABLES:
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+# Fill in NEXT_PUBLIC_API_URL and Cognito config values
+npm run dev
+```
 
-1. TERRAFORM MODULES
-Write modular Terraform in infra/terraform/modules/ covering:
-- vpc/ — VPC, public/private subnets, NAT gateway, Internet gateway, route tables
-- ecs/ — ECS cluster, task definitions, service, ECR
-- eks/ — EKS cluster, node groups, IAM roles for service accounts (IRSA)
-- rds/ — RDS PostgreSQL with Multi-AZ, parameter groups, subnet groups
-- dynamodb/ — tables for users, sessions, chat_history, recommendations
-- s3/ — buckets for uploads, reports, model artifacts, logs with versioning and encryption
-- elasticache/ — Redis cluster for Celery and session cache
-- opensearch/ — domain with vector engine enabled, fine-grained access control
-- sagemaker/ — SageMaker domain, execution roles, S3 integration, endpoint configs
-- cognito/ — user pool, app client, identity pool, hosted UI
-- api_gateway/ — REST API Gateway with Lambda authorizer or Cognito authorizer
-- alb/ — Application Load Balancer, target groups, listeners, HTTPS
-- cloudfront/ — distribution pointing to ALB and S3, WAF association
-- route53/ — hosted zone, A/AAAA alias records
-- iam/ — least privilege roles for each service (ECS task role, SageMaker role, Lambda role)
-- secrets/ — Secrets Manager entries for DB credentials, API keys, Bedrock config
-- kms/ — customer-managed keys for S3, DynamoDB, RDS encryption
-- waf/ — WAF WebACL with managed rules attached to CloudFront and ALB
-- sqs_sns/ — queues for async jobs, topics for incident alerts
-- monitoring/ — CloudWatch log groups, metric alarms, dashboards, X-Ray groups
+### 3. Backend Setup
 
-Use environments: infra/terraform/environments/dev/ and infra/terraform/environments/prod/ with separate .tfvars files.
+```bash
+cd backend
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# Fill in AWS credentials, DynamoDB table names, Redis URL
+uvicorn main:app --reload --port 8000
+```
 
-2. KUBERNETES MANIFESTS (infra/kubernetes/)
-Write manifests for:
-- Deployments for: backend-api, celery-worker, rag-service, agent-service
-- Services (ClusterIP for internal, LoadBalancer or Ingress for external)
-- Ingress with ALB ingress controller annotations
-- ConfigMaps for environment configs
-- HorizontalPodAutoscaler for each deployment
-- PodDisruptionBudgets
-- Namespace: clouddaddy
+### 4. Start Celery Worker
 
-3. DOCKER
-Write Dockerfiles for:
-- backend/ — multi-stage Python FastAPI image
-- ai_agents/ — multi-stage Python LangGraph image
-- ml_models/ — SageMaker-compatible inference container
+```bash
+cd backend
+celery -A workers.celery_app worker --loglevel=info
+```
 
-All images use non-root users. No secrets in images.
+### 5. AI Agents Setup
 
-4. CI/CD — GITHUB ACTIONS (.github/workflows/)
-Write workflows:
-- ci.yml — runs on PR to main: lint, type check, unit tests for frontend and backend
-- deploy-backend.yml — on push to main: build Docker image, push to ECR, update ECS/EKS service
-- deploy-frontend.yml — on push to main: build Next.js, deploy to S3 + invalidate CloudFront
-- deploy-infra.yml — on push to main with changes in infra/: terraform plan and apply
-- deploy-ml.yml — triggered manually or on changes to ml_models/: package and push SageMaker model
+```bash
+cd ai_agents
+pip install -r requirements.txt
+cp .env.example .env
+# Fill in Bedrock model IDs, OpenSearch endpoint, SageMaker endpoint names
+```
 
-5. MLOPS
-In infra/terraform/modules/sagemaker/ and a monitoring/mlflow/ directory:
-- Set up SageMaker Pipelines for training (preprocessing → training → evaluation → registration)
-- Set up MLflow tracking server backed by S3 and RDS
-- Configure SageMaker Model Monitor for drift detection on deployed endpoints
-- Write a SageMaker endpoint config for each model: cost-prediction, anomaly-detection, capacity-forecasting
+### 6. Infrastructure Deployment (Dev)
 
-6. MONITORING
-- CloudWatch dashboard covering: ECS CPU/memory, DynamoDB read/write units, Redis memory, API Gateway 4xx/5xx, SageMaker endpoint latency
-- Prometheus scrape configs for EKS pods
-- Grafana dashboards for: API performance, ML model latency, infra health, cost trends
-- CloudWatch alarms for: high CPU, 5xx spike, DB connection exhaustion, Redis eviction
+```bash
+cd infra/terraform/environments/dev
+terraform init
+terraform plan
+terraform apply
+```
 
-RULES:
-- Never hardcode secrets — use Secrets Manager and pass via environment variables
-- All S3 buckets: versioning enabled, server-side encryption with KMS, public access blocked
-- All DynamoDB tables: encryption at rest, point-in-time recovery enabled
-- All IAM roles: least privilege, no wildcard actions unless explicitly necessary
-- Terraform state must be stored in S3 with DynamoDB locking
-- Tag every resource: Project=CloudDaddy, Environment=dev/prod, ManagedBy=Terraform
+### 7. RAG Pipeline Ingestion
 
-Push all work to branch: dev/devops
-Follow conventional commits: chore: for infra, feat: for new modules
+```bash
+cd rag_pipeline
+python ingestion/ingest.py       # Load and chunk AWS docs
+python embeddings/embed_and_index.py  # Embed and index to OpenSearch
 ```
 
 ---
 
-## 9. Developer 2 — Frontend Engineer
+## 🔐 Environment Variables
 
-### Role Summary
-You own the entire user-facing application. Users interact with CloudDaddy through your UI. You build the dashboard, the drag-and-drop architecture builder, the chat copilot interface, the analytics views, and all auth flows. You consume backend APIs and make the AI feel like magic to the user.
+Each module maintains its own `.env.example`. Below are the key variables required across the platform.
 
-### Tech Ownership
-- Next.js 14 App Router application
-- TypeScript strict mode throughout
-- TailwindCSS + shadcn/ui component system
-- React Flow (architecture drag-and-drop builder)
-- Recharts (cost, capacity, anomaly charts)
-- Framer Motion (animations and transitions)
-- AWS Cognito auth integration (Amplify or cognito-identity-js)
-- All API calls to backend (using React Query / SWR)
-- WebSocket integration for real-time agent status
-- File upload (Terraform, YAML, JSON configs)
-- Responsive and accessible UI
+<details>
+<summary><b>🎨 Frontend — <code>.env.local</code></b></summary>
 
-### Your Branch
-`dev/frontend`
-
-### Personalized Prompt
-
+```env
+NEXT_PUBLIC_API_URL=https://api.cloudyai.yourdomain.com
+NEXT_PUBLIC_WS_URL=wss://api.cloudyai.yourdomain.com
+NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-east-1_XXXXXXXXX
+NEXT_PUBLIC_COGNITO_CLIENT_ID=XXXXXXXXXXXXXXXXXXXXXXXXXX
+NEXT_PUBLIC_COGNITO_REGION=us-east-1
 ```
-You are the Frontend Engineer for CloudDaddy.
 
-You build the Next.js 14 application that is the face of the platform. Every interaction a user has with CloudDaddy goes through your UI. Make it feel like a serious enterprise AI product, not a student project.
+</details>
 
-YOUR DELIVERABLES:
+<details>
+<summary><b>⚙️ Backend — <code>.env</code></b></summary>
 
-1. PROJECT SETUP (frontend/)
-- Next.js 14 with App Router, TypeScript strict mode
-- TailwindCSS configured with a custom design system (dark mode primary)
-- shadcn/ui installed and configured
-- ESLint + Prettier configured
-- Absolute imports with @ alias
-- Environment variables via .env.local (NEXT_PUBLIC_ prefix for client-safe vars)
+```env
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
 
-2. AUTH FLOW
-Integrate AWS Cognito using the `amazon-cognito-identity-js` package or AWS Amplify Auth.
-Build:
-- /login — email + password login form
-- /signup — registration with email verification
-- /mfa — MFA challenge screen (Cognito TOTP/SMS)
-- Protected route HOC or middleware that redirects unauthenticated users
-- useAuth() hook that exposes: user, login(), logout(), isAuthenticated, getToken()
-- Token refresh logic (Cognito refresh token)
-- Store tokens in httpOnly cookie via a Next.js API route, never in localStorage
+COGNITO_USER_POOL_ID=us-east-1_XXXXXXXXX
+COGNITO_CLIENT_ID=XXXXXXXXXXXXXXXXXXXXXXXXXX
 
-3. DASHBOARD (app/dashboard/)
-The main landing page after login. Show:
-- Infra health score card (circular gauge using Recharts RadialBarChart)
-- Latest AI recommendations list (severity badge, description, action button)
-- Cost this month vs last month (bar chart)
-- Active incidents count with severity breakdown
-- Security risk score card
-- Recent activity feed
-- Sidebar navigation to all modules
+DYNAMODB_USERS_TABLE=cloudyai-users
+DYNAMODB_JOBS_TABLE=cloudyai-jobs
+DYNAMODB_CONVERSATIONS_TABLE=cloudyai-conversations
 
-4. ARCHITECTURE BUILDER (app/builder/)
-The most impressive UI module. Use React Flow.
-- Canvas with drag-and-drop AWS service nodes (EC2, ECS, RDS, S3, Lambda, API Gateway, CloudFront, VPC, etc.)
-- Each node has an icon, label, and config panel on click
-- AI Suggestion Panel on the right side — shows LLM recommendations as the user builds
-- "Analyze Architecture" button — sends the current diagram JSON to POST /api/analyze-architecture
-- "Generate Architecture" button opens a modal where user inputs requirements (form with: user traffic, budget, latency, storage, compliance) and calls POST /api/generate-design
-- Display returned architecture as React Flow nodes automatically
-- Export diagram as PNG (use react-flow's built-in getViewport + html-to-image)
+S3_UPLOADS_BUCKET=cloudyai-uploads
+S3_REPORTS_BUCKET=cloudyai-reports
 
-5. INFRA ANALYZER (app/analyzer/)
-- File upload dropzone (react-dropzone) accepting .tf, .yaml, .yml, .json, .json5 files
-- Upload calls POST /api/upload-config
-- Show upload progress
-- After analysis completes (poll GET /api/job/{job_id} or WebSocket), display:
-  - Risk findings table (severity: critical/high/medium/low, description, resource, recommendation)
-  - Filter by severity
-  - Export report as PDF (call GET /api/report/{job_id})
+REDIS_URL=redis://localhost:6379/0
 
-6. CHAT COPILOT (app/copilot/)
-- Chat interface with message history
-- Markdown rendering for AI responses (react-markdown + rehype-highlight for code blocks)
-- File attachment button (upload context docs, Terraform files)
-- Streaming response (use fetch with ReadableStream or EventSource for SSE from backend)
-- Suggested questions as clickable chips
-- Clear conversation button
+SAGEMAKER_COST_ENDPOINT=cloudyai-cost-prediction
+SAGEMAKER_ANOMALY_ENDPOINT=cloudyai-anomaly-detection
+SAGEMAKER_CAPACITY_ENDPOINT=cloudyai-capacity-forecasting
 
-7. COST & ANALYTICS DASHBOARD (app/analytics/)
-Show using Recharts:
-- Monthly cost trend (LineChart, last 12 months)
-- Cost by service (PieChart or TreeMap)
-- Predicted cost next 3 months (AreaChart with confidence band)
-- Capacity forecasting (CPU, RAM, Storage — LineChart with forecast line in different color)
-- Anomaly alerts timeline (scatter plot with highlighted anomaly points)
-All data from GET /api/predict-cost and GET /api/capacity-forecast.
-
-8. SECURITY MODULE (app/security/)
-- Security score gauge
-- Findings table: IAM issues, open ports, exposed resources, missing encryption
-- Each finding expandable with full detail and remediation steps
-- "Run Security Scan" button → POST /api/security-scan → poll for result
-
-9. INCIDENT CENTER (app/incidents/)
-- Active and historical incidents list
-- Incident detail view: timeline, root cause, affected services, AI recommendation
-- Status badge: open, investigating, resolved
-- Trigger manual incident analysis: POST /api/incident-analysis
-
-10. SHARED COMPONENTS (components/)
-Build these reusable components:
-- <SeverityBadge level="critical|high|medium|low" />
-- <MetricCard title value trend icon />
-- <LoadingOverlay message />
-- <ConfirmModal title message onConfirm onCancel />
-- <FileUploadDropzone onUpload accept />
-- <StreamingMessage content isStreaming />
-- <ArchitectureNode type label /> (React Flow custom node)
-
-11. API LAYER (lib/api/)
-- Centralized axios or fetch wrapper with base URL from env
-- Attach Cognito JWT to every request via Authorization header
-- Handle 401 → trigger logout
-- Handle 429 → show rate limit toast
-- Typed request/response interfaces for every endpoint
-
-12. STATE MANAGEMENT
-Use Zustand for global state:
-- authStore: user, tokens, isAuthenticated
-- incidentStore: active incidents count
-- recommendationStore: latest recommendations
-Use React Query (TanStack Query) for all server data: fetching, caching, refetching.
-
-DESIGN SYSTEM:
-- Primary color: indigo-600
-- Background: slate-950 (dark mode default)
-- Surface: slate-900
-- Border: slate-700
-- Typography: Inter font
-- Spacing: 4px base grid via Tailwind
-- All interactive elements must have focus rings for accessibility
-
-Push all work to branch: dev/frontend
-Follow conventional commits: feat: for new pages/components, fix: for bugs, refactor: for cleanup
+FRONTEND_ORIGIN=https://cloudyai.yourdomain.com
 ```
+
+</details>
+
+<details>
+<summary><b>🤖 AI Agents — <code>.env</code></b></summary>
+
+```env
+AWS_REGION=us-east-1
+BEDROCK_MODEL_ID=anthropic.claude-3-sonnet-20240229-v1:0
+BEDROCK_EMBEDDING_MODEL_ID=amazon.titan-embed-text-v1
+
+OPENSEARCH_ENDPOINT=https://search-cloudyai-xxxx.us-east-1.es.amazonaws.com
+OPENSEARCH_INDEX=cloudyai-knowledge
+
+SAGEMAKER_COST_ENDPOINT=cloudyai-cost-prediction
+MLFLOW_TRACKING_URI=http://mlflow.internal:5000
+```
+
+</details>
 
 ---
 
-## 10. Developer 3 — Backend Engineer
+## 👥 Team
 
-### Role Summary
-You own the FastAPI application, all API endpoints, authentication middleware, file parsing services, and the async task system. You are the bridge between the frontend, the AI/ML layer, and AWS services. Every AI feature is triggered through your API.
+Built with 🔥 by the CloudyAI team — 2026.
 
-### Tech Ownership
-- FastAPI application (Python 3.11)
-- All API routes and request/response schemas (Pydantic)
-- AWS Cognito JWT verification middleware
-- RBAC middleware
-- File processing service (HCL, YAML, JSON, logs)
-- Celery workers for async AI/ML jobs
-- Redis (task queue, session cache)
-- DynamoDB integration (users, sessions, chat history, jobs)
-- S3 integration (file uploads, report storage)
-- SQS (job dispatch), SNS (incident alerts)
-- WebSocket endpoint for real-time job status
-- Integration contracts with AI/ML layer (calls to LangGraph agents and SageMaker endpoints)
-
-### Your Branch
-`dev/backend`
-
-### Personalized Prompt
-
-```
-You are the Backend Engineer for CloudDaddy.
-
-You build the FastAPI application that powers the entire platform. The frontend calls your APIs. Your APIs call the AI agents and ML models. You own the request lifecycle, auth, data layer, and async job system.
-
-YOUR DELIVERABLES:
-
-1. PROJECT SETUP (backend/)
-- FastAPI 0.111+ with Python 3.11
-- Project structure:
-  backend/
-  ├── api/
-  │   └── routes/
-  ├── auth/
-  ├── services/
-  ├── workers/
-  ├── core/
-  │   ├── config.py
-  │   └── dependencies.py
-  ├── models/
-  ├── schemas/
-  └── main.py
-- Use pydantic-settings for config loaded from environment variables
-- Use `uvicorn` with `gunicorn` as the process manager
-- CORS configured to allow only the frontend origin
-- All secrets via environment variables, never hardcoded
-
-2. AUTHENTICATION MIDDLEWARE (auth/)
-Implement JWT verification using the Cognito JWKS endpoint:
-- Fetch and cache Cognito JWKS on startup
-- Verify RS256 JWT signature, expiry, iss, aud claims on every protected route
-- FastAPI Depends() decorator: get_current_user(token: str) → UserContext
-- UserContext dataclass: user_id, email, roles, cognito_groups
-- RBAC: role-based permission check Depends(require_role("admin")) for sensitive routes
-- Refresh token endpoint: POST /auth/refresh — validates Cognito refresh token and returns new access token
-
-3. API ROUTES (api/routes/)
-Implement every route with full Pydantic request/response schemas and proper HTTP status codes:
-
-POST /api/upload-config
-- Accept multipart file upload (.tf, .yaml, .yml, .json)
-- Validate file type and size (max 10MB)
-- Save file to S3 (uploads/{user_id}/{job_id}/filename)
-- Create job record in DynamoDB (status: queued)
-- Dispatch Celery task: analyze_infrastructure_task(job_id, s3_key, user_id)
-- Return: { job_id, status: "queued" }
-
-POST /api/generate-design
-- Body: { traffic, budget, latency, storage, compliance, workload_type }
-- Dispatch Celery task: generate_architecture_task(job_id, requirements, user_id)
-- Return: { job_id, status: "queued" }
-
-POST /api/analyze-architecture
-- Body: { diagram_json } (React Flow JSON from frontend)
-- Dispatch Celery task: analyze_diagram_task(job_id, diagram_json, user_id)
-- Return: { job_id, status: "queued" }
-
-GET /api/job/{job_id}
-- Fetch job from DynamoDB
-- Return: { job_id, status, result, error, created_at, updated_at }
-
-POST /api/chat
-- Body: { message, conversation_id, attachments: [] }
-- Fetch conversation history from DynamoDB
-- Forward to RAG copilot agent (call ai_agents service via HTTP or direct import)
-- Stream response back as Server-Sent Events (SSE)
-- Save updated conversation to DynamoDB
-
-POST /api/predict-cost
-- Body: { instance_types, request_volume, storage_gb, bandwidth_gb }
-- Call SageMaker cost-prediction endpoint via boto3
-- Return: { predicted_monthly_cost, confidence_interval, breakdown }
-
-GET /api/capacity-forecast
-- Query params: metric (cpu|memory|storage), horizon_days
-- Call SageMaker capacity-forecasting endpoint
-- Return: { forecasts: [{ timestamp, value, lower_bound, upper_bound }] }
-
-POST /api/security-scan
-- Dispatch Celery task: security_scan_task(job_id, user_id)
-- Calls security agent in ai_agents service
-- Return: { job_id, status: "queued" }
-
-POST /api/incident-analysis
-- Body: { log_group, start_time, end_time, description }
-- Dispatch Celery task: incident_analysis_task(job_id, params, user_id)
-- Return: { job_id, status: "queued" }
-
-GET /api/recommendations
-- Query params: limit, severity, status
-- Fetch from DynamoDB recommendations table for current user
-- Return: paginated list of recommendations
-
-GET /api/report/{job_id}
-- Fetch completed job result from DynamoDB
-- Generate PDF report using ReportLab or WeasyPrint
-- Upload to S3 reports/{user_id}/{job_id}.pdf
-- Return pre-signed S3 URL (valid 15 minutes)
-
-4. FILE PROCESSING SERVICE (services/file_processor.py)
-Parse uploaded infrastructure files:
-- Terraform HCL: use python-hcl2 library
-- YAML/CloudFormation: use PyYAML
-- JSON: stdlib json
-- Extract: resource types, instance types, storage configs, network configs, IAM policies
-- Return structured dict that agents can consume
-- Handle parse errors gracefully with descriptive error messages
-
-5. CELERY WORKERS (workers/)
-Configure Celery with Redis broker and Redis result backend.
-Write task functions in workers/tasks.py:
-- analyze_infrastructure_task(job_id, s3_key, user_id)
-  Downloads file from S3 → processes → calls Architecture Agent → saves result to DynamoDB
-- generate_architecture_task(job_id, requirements, user_id)
-  Calls Architecture Agent → saves diagram JSON + explanation to DynamoDB
-- security_scan_task(job_id, user_id)
-  Fetches user's recent configs from DynamoDB → calls Security Agent → saves findings
-- incident_analysis_task(job_id, params, user_id)
-  Fetches CloudWatch logs via boto3 → calls Incident Agent → saves report
-- Update job status in DynamoDB at each step: queued → running → completed/failed
-
-6. WEBSOCKET ENDPOINT
-GET /ws/job/{job_id}
-- WebSocket endpoint using FastAPI WebSocket
-- Poll DynamoDB every 2 seconds for job status updates
-- Push status updates to connected client
-- Close connection when job reaches terminal state (completed/failed)
-
-7. DYNAMO DB SCHEMAS
-Define table structures:
-- users: PK=user_id, SK=profile | Attributes: email, roles, created_at
-- jobs: PK=user_id, SK=job_id | Attributes: status, type, result, error, created_at, updated_at | GSI: job_id-index
-- conversations: PK=user_id, SK=conversation_id | Attributes: messages (list), created_at
-- recommendations: PK=user_id, SK=rec_id | Attributes: severity, type, description, resource, status
-- Use DynamoDB single-table design where practical
-
-8. AWS INTEGRATIONS (services/)
-Write boto3 wrapper services:
-- s3_service.py: upload_file(), download_file(), generate_presigned_url(), delete_file()
-- dynamo_service.py: put_item(), get_item(), query(), update_status()
-- sagemaker_service.py: invoke_endpoint(endpoint_name, payload) with retry logic
-- cloudwatch_service.py: get_log_events(log_group, start_time, end_time), get_metric_data()
-- sns_service.py: publish_incident_alert(topic_arn, message)
-
-9. ERROR HANDLING
-- Global exception handler in main.py
-- Custom exception classes: AuthenticationError, AuthorizationError, JobNotFoundError, FileTooLargeError, UnsupportedFileTypeError
-- All errors return: { error_code, message, details } with appropriate HTTP status
-- Log all 5xx errors to CloudWatch Logs via Python logging with structlog
-
-10. TESTS (tests/)
-Write pytest tests:
-- tests/test_auth.py — JWT verification, RBAC
-- tests/test_upload.py — file validation, S3 mock with moto
-- tests/test_jobs.py — job creation, status polling
-- tests/test_file_processor.py — HCL, YAML, JSON parsing
-Use pytest-asyncio for async test support. Use moto for AWS mocking.
-
-Push all work to branch: dev/backend
-Follow conventional commits: feat: for new endpoints, fix: for bugs, refactor: for restructuring
-```
+<table>
+<tr>
+<td align="center" width="20%">
+  <b>Maitry Patel</b><br/>
+  <sub>Team Lead · DevOps Engineer</sub><br/>
+  <sub>AWS Infrastructure · Terraform · EKS/ECS · CI/CD · MLOps</sub><br/>
+  <code>Branch: dev/devops</code>
+</td>
+<td align="center" width="20%">
+  <b>Vidhi Joshi</b><br/>
+  <sub>Frontend Engineer</sub><br/>
+  <sub>Next.js · React Flow · UI/UX · Cognito Integration</sub><br/>
+  <code>Branch: dev/frontend</code>
+</td>
+<td align="center" width="20%">
+  <b>Shruti Ingle</b><br/>
+  <sub>Full-Stack Developer</sub><br/>
+  <sub>Frontend + Backend integration · File processing · WebSockets</sub><br/>
+  <code>Branch: dev/frontend</code>
+</td>
+<td align="center" width="20%">
+  <b>Krishna Yadav</b><br/>
+  <sub>AI / ML Engineer</sub><br/>
+  <sub>LangGraph · RAG · AWS Bedrock · SageMaker ML Models</sub><br/>
+  <code>Branch: dev/ai-ml</code>
+</td>
+<td align="center" width="20%">
+  <b>Arpit Carpenter</b><br/>
+  <sub>Backend Engineer</sub><br/>
+  <sub>FastAPI · Celery · DynamoDB · S3 · SageMaker Inference</sub><br/>
+  <code>Branch: dev/backend</code>
+</td>
+</tr>
+</table>
 
 ---
 
-## 11. Developer 4 — AI/ML Engineer
-
-### Role Summary
-You own the intelligence layer of CloudDaddy. The multi-agent LangGraph system, the RAG pipeline, AWS Bedrock LLM calls, and all custom ML models trained and deployed via SageMaker — that is your domain. You make CloudDaddy smart.
-
-### Tech Ownership
-- LangGraph multi-agent orchestration system
-- All 7 AI agents (Architecture, Security, Cost, Monitoring, Incident, Automation, Documentation)
-- RAG pipeline: ingestion, embedding, retrieval via OpenSearch
-- AWS Bedrock integration (Claude 3 / Llama 3 / Titan)
-- Custom ML models: cost prediction, anomaly detection, capacity forecasting
-- SageMaker training pipelines and inference endpoints
-- MLflow experiment tracking
-- Prompt engineering and chain construction
-
-### Your Branch
-`dev/ai-ml`
-
-### Personalized Prompt
-
-```
-You are the AI/ML Engineer for CloudDaddy.
-
-You build the brain of the platform. The multi-agent AI system, the RAG knowledge retrieval pipeline, the AWS Bedrock LLM integration, and the custom ML models trained on SageMaker. This is the part of the project that makes CloudDaddy resume-worthy for AI/ML companies.
-
-YOUR DELIVERABLES:
-
-1. PROJECT SETUP
-Two main directories:
-- ai_agents/ — LangGraph agentic system
-- ml_models/ — SageMaker ML models
-- rag_pipeline/ — RAG ingestion, embedding, retrieval
-
-Dependencies: langchain, langgraph, langchain-aws, boto3, opensearch-py, scikit-learn, xgboost, prophet, tensorflow (for LSTM), mlflow, pandas, numpy, pydantic
-
-2. AWS BEDROCK INTEGRATION (ai_agents/bedrock_client.py)
-Create a reusable Bedrock client:
-- Use boto3 bedrock-runtime client
-- Support model switching: anthropic.claude-3-sonnet, meta.llama3-70b-instruct, amazon.titan-text-express
-- implement invoke_model(model_id, prompt, max_tokens, temperature) → str
-- implement invoke_model_streaming(model_id, prompt) → AsyncGenerator[str]
-- Wrap with retry logic (exponential backoff on ThrottlingException)
-- Log token usage to CloudWatch custom metrics
-
-3. LANGGRAPH MULTI-AGENT SYSTEM (ai_agents/)
-
-Build the agent orchestrator in ai_agents/orchestrator/graph.py using LangGraph StateGraph.
-
-Define shared AgentState (TypedDict):
-- user_query: str
-- requirements: dict
-- parsed_config: dict
-- architecture_output: dict
-- security_findings: list
-- cost_analysis: dict
-- capacity_forecast: dict
-- incident_summary: dict
-- automation_actions: list
-- final_report: str
-- messages: list[BaseMessage]
-
-AGENT 1 — Architecture Agent (ai_agents/architecture_agent/)
-Input: requirements dict or parsed_config dict
-Tasks:
-- Given requirements: select compute (EC2/ECS/EKS/Lambda), DB (DynamoDB/RDS/Aurora), storage, networking, CDN, caching strategy
-- Given parsed_config: identify architecture pattern and classify components
-- Use AWS Well-Architected Framework principles in system prompt
-- Output: { diagram_json (React Flow format), explanation, tradeoffs, cost_estimate_rough }
-Tool: call Bedrock Claude with structured output via LangChain's with_structured_output
-
-AGENT 2 — Security Agent (ai_agents/security_agent/)
-Input: parsed_config dict or architecture_output dict
-Tasks:
-- Check for: public S3 buckets, open port 22/3389 to 0.0.0.0/0, missing SSL, no WAF, root account usage, wildcard IAM, no MFA, missing encryption, exposed secrets in config
-- Score each finding: critical/high/medium/low
-- Generate remediation steps for each finding
-- Output: { findings: [{ severity, resource, issue, remediation }], overall_risk_score }
-
-AGENT 3 — Cost Agent (ai_agents/cost_agent/)
-Input: architecture_output dict or parsed_config dict
-Tasks:
-- Estimate monthly cost per service from architecture
-- Recommend: Reserved Instances for steady-state compute, Spot Instances for batch jobs, right-sizing (if overprovisioned), Savings Plans
-- Call SageMaker cost-prediction endpoint to get ML-based cost forecast
-- Output: { current_estimated_cost, optimized_estimated_cost, savings_potential, recommendations: [] }
-
-AGENT 4 — Monitoring Agent (ai_agents/monitoring_agent/)
-Input: cloudwatch_data dict (passed from backend)
-Tasks:
-- Analyze CloudWatch metrics: CPU, memory, request count, error rate, latency
-- Detect anomalies by comparing against historical baseline
-- Flag: CPU > 80%, error rate > 5%, latency p99 > threshold
-- Output: { health_status, alerts: [], summary }
-
-AGENT 5 — Incident Agent (ai_agents/incident_agent/)
-Input: logs (list of log lines), metrics dict, incident_description str
-Tasks:
-- Parse log lines to extract error patterns, stack traces, exception types
-- Correlate with metric anomalies (CPU spike, memory spike, connection errors)
-- Use chain-of-thought prompting to reason through root cause
-- Output: { root_cause, affected_services, timeline, recommended_actions, severity, summary }
-
-AGENT 6 — Automation Agent (ai_agents/automation_agent/)
-Input: incident_summary dict or recommendation list
-Tasks:
-- Decide which actions are safe to automate vs require human approval
-- Generate action plan: { action_type, resource, parameters, requires_approval }
-- Action types: scale_up, restart_service, rotate_credentials, rollback_deployment, create_jira_ticket, send_slack_alert
-- DO NOT execute actions directly — return action plan to backend which executes via boto3
-- Output: { action_plan: [], human_approval_required: bool }
-
-AGENT 7 — Documentation Agent (ai_agents/documentation_agent/)
-Input: all agent outputs from AgentState
-Tasks:
-- Synthesize all agent outputs into a single structured report
-- Sections: Executive Summary, Architecture Analysis, Security Findings, Cost Analysis, Capacity Forecast, Incident Report, Recommended Actions
-- Format as markdown
-- Output: { report_markdown, key_findings: [], priority_actions: [] }
-
-ORCHESTRATOR (ai_agents/orchestrator/graph.py)
-Build a LangGraph StateGraph that:
-- Routes to the correct agent(s) based on task_type in AgentState
-- For "full_analysis": runs Architecture → Security → Cost → Documentation agents in sequence
-- For "incident": runs Monitoring → Incident → Automation → Documentation agents
-- For "design": runs Architecture → Cost → Documentation agents
-- For "security_scan": runs Security → Documentation agents
-- Uses conditional edges to skip agents that are not needed
-- Returns final AgentState with all outputs populated
-
-Expose a single function: async def run_agent_pipeline(task_type, input_data) → dict
-
-4. RAG PIPELINE (rag_pipeline/)
-
-INGESTION (rag_pipeline/ingestion/)
-Script: ingest.py
-- Load documents from: AWS docs (scraped or downloaded), architecture best practices PDFs, internal markdown files from docs/
-- Use LangChain document loaders: WebBaseLoader, PyPDFLoader, TextLoader
-- Chunk documents: RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-- Add metadata: source, category (security|cost|architecture|networking), timestamp
-
-EMBEDDINGS (rag_pipeline/embeddings/)
-- Use AWS Bedrock Embeddings: amazon.titan-embed-text-v1
-- Embed each chunk via BedrockEmbeddings from langchain-aws
-- Store vectors in OpenSearch index: clouddaddy-knowledge with knn_vector field (1536 dims)
-- OpenSearch index mapping: { vector: knn_vector, text: text, metadata: keyword }
-- Script: embed_and_index.py — reads chunks, generates embeddings, bulk-indexes to OpenSearch
-
-RETRIEVAL (rag_pipeline/retrieval/)
-- retriever.py: similarity_search(query, k=5, filter=None) → list[Document]
-- Use OpenSearch k-NN query with the query embedding
-- Support metadata filtering: filter by category
-- rag_chain.py: build LangChain RAG chain:
-  query → embed → retrieve top-k → build prompt with context → Bedrock LLM → answer
-- Expose: async def answer_question(query, conversation_history, category_filter) → str
-
-5. ML MODELS (ml_models/)
-
-COST PREDICTION MODEL (ml_models/cost_prediction/)
-- train.py: 
-  - Features: instance_type (encoded), vcpu_count, memory_gb, storage_gb, request_volume_daily, bandwidth_gb
-  - Target: monthly_cost_usd
-  - Models: XGBoost Regressor and Random Forest Regressor
-  - Cross-validation with 5-fold CV
-  - Log metrics to MLflow: RMSE, MAE, R²
-  - Register best model in MLflow Model Registry
-- inference.py:
-  - SageMaker-compatible: model_fn(), input_fn(), predict_fn(), output_fn()
-  - Load model from /opt/ml/model
-  - Accept JSON input, return JSON output
-
-ANOMALY DETECTION MODEL (ml_models/anomaly_detection/)
-- train.py:
-  - Features: cpu_utilization, memory_utilization, request_rate, error_rate, latency_p99
-  - Model: Isolation Forest (contamination=0.05), One-Class SVM
-  - Train on normal traffic windows from CloudWatch metric history
-  - Log: precision, recall, F1 on labeled anomaly test set
-  - Register in MLflow
-- inference.py:
-  - SageMaker-compatible inference handlers
-  - Output: { is_anomaly: bool, anomaly_score: float, contributing_features: [] }
-
-CAPACITY FORECASTING MODEL (ml_models/capacity_forecasting/)
-- train.py:
-  - Features: timestamp, cpu_utilization, memory_utilization, storage_used_gb
-  - Models:
-    - Prophet: fit on time series with weekly and daily seasonality
-    - LSTM: build with Keras — 2 LSTM layers, 1 Dense output layer, sequence length 24 (hourly data)
-  - Log to MLflow: MAPE, RMSE on held-out forecast window
-  - Save Prophet model as pickle, LSTM as SavedModel format
-- inference.py:
-  - SageMaker-compatible
-  - Input: { metric, historical_data: [], horizon_hours: 72 }
-  - Output: { forecasts: [{ timestamp, value, lower_bound, upper_bound }] }
-
-SAGEMAKER TRAINING SCRIPT PATTERN:
-Each train.py must:
-- Read training data from /opt/ml/input/data/train/
-- Save model artifacts to /opt/ml/model/
-- Log hyperparameters from /opt/ml/input/config/hyperparameters.json
-- Write evaluation metrics to /opt/ml/output/metrics/
-
-6. EXPOSED SERVICE (ai_agents/service.py)
-FastAPI micro-service (or importable module) that the backend calls:
-- POST /agents/run { task_type, input_data } → { result }
-- POST /rag/query { query, conversation_history, category } → { answer }
-These can be either a separate FastAPI service or Python functions imported directly by the backend workers — coordinate with the Backend Engineer.
-
-7. PROMPT ENGINEERING STANDARDS
-- All system prompts stored in ai_agents/prompts/ as .txt files, loaded at runtime
-- Use f-strings or LangChain PromptTemplate for dynamic content
-- Every agent system prompt includes: role definition, output format specification, constraints, examples
-- Use structured output (Pydantic schemas) with LangChain's with_structured_output() to enforce JSON output
-
-8. TESTS (tests/)
-- tests/test_agents.py — test each agent with mock Bedrock responses
-- tests/test_rag.py — test retrieval with mock OpenSearch responses
-- tests/test_ml_cost.py — test cost model inference
-- tests/test_ml_anomaly.py — test anomaly detection
-Use pytest-asyncio for async agent tests. Use unittest.mock to mock boto3 calls.
-
-Push all work to branch: dev/ai-ml
-Follow conventional commits: feat: for new agents/models, fix: for bugs, experiment: for model experiments
-```
-
----
-
-## 12. GitHub Workflow & Branching Strategy
+## 🌿 Branch Strategy
 
 ```
 main
-├── dev/devops      ← Dev 1 (AWS & DevOps)
-├── dev/frontend    ← Dev 2 (Frontend)
-├── dev/backend     ← Dev 3 (Backend)
-└── dev/ai-ml       ← Dev 4 (AI/ML)
+├── dev/devops      ← Maitry Patel     — AWS infra, Terraform, EKS, CI/CD, MLOps
+├── dev/frontend    ← Vidhi + Shruti   — Next.js app, all UI modules, API integration
+├── dev/backend     ← Arpit Carpenter  — FastAPI, all endpoints, Celery workers
+└── dev/ai-ml       ← Krishna Yadav   — LangGraph agents, RAG pipeline, ML models
 ```
 
 **Rules:**
-- Nobody pushes directly to `main`
-- Each developer works exclusively on their branch
-- PRs to `main` require at least one reviewer approval
-- CI must pass before merge (lint, type check, tests)
-- Merge strategy: Squash and merge for feature branches
+- ❌ No direct pushes to `main`
+- ✅ All merges require at least one reviewer approval
+- ✅ CI must pass (lint + type-check + unit tests) before any merge
+- ✅ Squash and merge strategy for all feature branches
 
-**Commit Format (Conventional Commits):**
-```
-feat: add architecture agent LangGraph node
-fix: correct JWT expiry check in auth middleware
+### Commit Convention
+
+```bash
+feat:     add architecture agent LangGraph node
+fix:      correct JWT expiry check in auth middleware
 refactor: extract S3 upload logic into service class
-chore: add Terraform module for OpenSearch
-docs: update RAG pipeline README
+chore:    add Terraform module for OpenSearch domain
+docs:     update RAG pipeline README
+test:     add pytest coverage for file processor service
 ```
 
-**Environment Variables:**
-Each developer must maintain a `.env.example` file in their module directory with all required variable names (no values). The actual `.env` file is never committed.
+---
+
+## 🗓️ Roadmap & Build Phases
+
+```mermaid
+gantt
+    title CloudyAI MVP Build Roadmap
+    dateFormat  YYYY-MM-DD
+    section Phase 1 — Foundation
+    Terraform Base Infra (VPC, ECS, DDB, S3, Cognito)   :p1a, 2026-01-01, 14d
+    Backend Auth + Upload Endpoints                       :p1b, 2026-01-05, 14d
+    Frontend Auth Flow + Dashboard Shell                  :p1c, 2026-01-08, 14d
+
+    section Phase 2 — AI Core
+    RAG Pipeline Ingestion + Bedrock Integration          :p2a, 2026-01-15, 14d
+    Architecture Agent + Cost Agent                       :p2b, 2026-01-15, 14d
+    Backend Chat Endpoint (SSE Streaming)                 :p2c, 2026-01-20, 10d
+    Frontend Chat Copilot                                 :p2d, 2026-01-22, 10d
+
+    section Phase 3 — Full Agents
+    Multi-Agent LangGraph Orchestrator                    :p3a, 2026-02-01, 14d
+    Security Agent + Incident Agent                       :p3b, 2026-02-01, 14d
+    Frontend Architecture Builder + Infra Analyzer        :p3c, 2026-02-05, 14d
+
+    section Phase 4 — ML Platform
+    ML Model Training + SageMaker Deployment              :p4a, 2026-02-15, 21d
+    Frontend Analytics Dashboard                          :p4b, 2026-02-20, 14d
+
+    section Phase 5 — Production Hardening
+    Automation Agent + Self-Healing Workflows             :p5a, 2026-03-08, 14d
+    Prometheus + Grafana Observability Stack              :p5b, 2026-03-10, 10d
+    Full CI/CD Pipelines + Security Hardening             :p5c, 2026-03-12, 14d
+```
 
 ---
 
-## 13. MVP Build Order
+## 🤝 Contributing
 
-| Phase | What Gets Built | Who |
-|---|---|---|
-| Phase 1 | Terraform base infra (VPC, ECS, DynamoDB, S3, Cognito), Backend auth + upload endpoint, Frontend auth flow + basic dashboard shell | Dev 1 + Dev 3 + Dev 2 |
-| Phase 2 | RAG pipeline ingestion + Bedrock integration, Architecture Agent + Cost Agent, Backend chat endpoint with SSE, Frontend Chat Copilot | Dev 4 + Dev 3 + Dev 2 |
-| Phase 3 | Full multi-agent LangGraph orchestrator, Security Agent + Incident Agent, Frontend Architecture Builder + Infra Analyzer | Dev 4 + Dev 2 |
-| Phase 4 | ML model training + SageMaker deployment (cost prediction + anomaly detection + capacity forecasting), Frontend Analytics Dashboard | Dev 4 + Dev 1 + Dev 2 |
-| Phase 5 | Automation Agent + self-healing workflows, Monitoring (Prometheus + Grafana), Full CI/CD pipelines, Security hardening | Dev 1 + Dev 4 |
+Contributions are welcome and appreciated. Please follow these steps:
+
+1. Fork the repository
+2. Create your feature branch from the appropriate `dev/*` branch
+3. Write clean, typed, tested code (TypeScript strict mode / Python type hints)
+4. Write or update unit tests for all business logic
+5. Ensure your branch passes CI checks (lint, type-check, tests)
+6. Open a pull request with a clear description of your changes
+
+Please read the [Contributing Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting.
 
 ---
 
-*CloudDaddy — Built by engineers, for engineers. AI-native cloud intelligence.*
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+**CloudyAI** — Built by engineers, for engineers.
+
+*AI-native cloud intelligence that thinks before you deploy.*
+
+<br/>
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0ea5e9,50:1e3a5f,100:0f172a&height=100&section=footer" width="100%"/>
+
+</div>
