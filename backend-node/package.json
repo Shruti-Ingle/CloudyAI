@@ -1,10 +1,11 @@
 {
   "name": "clouddaddy-backend",
   "version": "1.0.0",
+  "type": "module",
   "description": "Express TypeScript Backend for CloudDaddy",
   "main": "dist/app.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --esm src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js"
   },
