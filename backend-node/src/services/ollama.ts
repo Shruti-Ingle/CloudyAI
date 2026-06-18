@@ -53,7 +53,7 @@ export class OllamaService {
     try {
       const response = await axios.post(`${this.baseUrl}/api/chat`, payload, {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 25000
+        timeout: 60000
       });
 
       let content = response.data.message.content.trim();

@@ -283,7 +283,18 @@ router.post('/chat', async (req: AuthenticatedRequest, res: Response) => {
   }
 
   const replyTextLower = replyText.toLowerCase();
-  const hasRateLimit = !replyText || replyTextLower.includes('quota') || replyTextLower.includes('rate limit') || replyTextLower.includes('high demand') || replyTextLower.includes('connection issue') || replyTextLower.includes('temporary');
+  const hasRateLimit = 
+    !replyText || 
+    replyTextLower.includes('quota') || 
+    replyTextLower.includes('rate limit') || 
+    replyTextLower.includes('rate limits') || 
+    replyTextLower.includes('high demand') || 
+    replyTextLower.includes('connection issue') || 
+    replyTextLower.includes('temporary') || 
+    replyTextLower.includes('temporarily') || 
+    replyTextLower.includes('leaked') ||
+    replyTextLower.includes('permission_denied') ||
+    replyTextLower.includes('forbidden');
 
   if (hasRateLimit) {
     // Automatic OpenAI failover recovery fallback loop if Gemini key hits a rate limit block!
