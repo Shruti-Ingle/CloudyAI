@@ -5,10 +5,8 @@ import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-sec
 dotenv.config();
 
 interface AppSettings {
-  OPENAI_API_KEY?: string;
-  GEMINI_API_KEY?: string;
-  OPENROUTER_API_KEY?: string;
-  SILICONFLOW_API_KEY?: string;
+  GROQ_API_KEY?: string;
+  GORQ_API_KEY?: string;
   COGNITO_USER_POOL_ID: string;
   COGNITO_CLIENT_ID: string;
   DYNAMODB_TABLE: string;
@@ -68,10 +66,8 @@ export async function initializeConfig(): Promise<AppSettings> {
 
   // Propagate to environment variables if not already set
   const keysToPropagate = [
-    'OPENAI_API_KEY',
-    'GEMINI_API_KEY',
-    'OPENROUTER_API_KEY',
-    'SILICONFLOW_API_KEY'
+    'GROQ_API_KEY',
+    'GORQ_API_KEY'
   ];
 
   for (const key of keysToPropagate) {

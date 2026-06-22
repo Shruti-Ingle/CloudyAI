@@ -22,7 +22,7 @@ export class GeminiService {
     this.apiKeys = parsedKeys.filter(k => !badKeys.has(k));
 
     if (this.apiKeys.length === 0) {
-      this.apiKeys = ['AIzaSyCbY9zUV6DMN0A_BZD-Gxh2cFSeMkeiuBI'];
+      this.apiKeys = [];
     }
   }
 

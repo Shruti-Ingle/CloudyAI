@@ -2,24 +2,19 @@ import axios from 'axios';
 import { getSystemPrompt } from '../utils/promptBuilder.js';
 import { ChatMessage } from './gemini.js';
 
-export class OpenRouterService {
+export class GroqService {
   private apiKey: string;
-  private baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-  
-  // Verified working free-tier models on OpenRouter (confirmed 2026-05-22)
-  // Priority: GPT-OSS 120B > Arcee Trinity > Nvidia Nemotron > Poolside Laguna
-  private primaryModel = 'openai/gpt-oss-120b:free';
-  private fallbackModel = 'arcee-ai/trinity-large-thinking:free';
-  private tertiaryModel = 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
-  private quaternaryModel = 'poolside/laguna-xs.2:free';
+  private baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
+  private defaultModel: string;
 
   constructor() {
-    this.apiKey = process.env.OPENROUTER_API_KEY || process.env.OLLAMA_API_KEY || '';
+    this.apiKey = process.env.GROQ_API_KEY || process.env.GORQ_API_KEY || '';
+    this.defaultModel = process.env.GROQ_MODEL || process.env.GORQ_MODEL || 'llama-3.3-70b-versatile';
   }
 
-  private async _callOpenRouter(messages: any[], systemPrompt?: string, requireJson = false): Promise<string> {
+  private async _callGroq(messages: any[], systemPrompt?: string, requireJson = false): Promise<string> {
     if (!this.apiKey) {
-      throw new Error('OPENROUTER_API_KEY is not set. Please set it to your free key from openrouter.ai/settings/keys');
+      throw new Error('Groq/Gorq API Key is not set. Please set the GROQ_API_KEY or GORQ_API_KEY environment variable.');
     }
 
     const payloadMessages = [];
@@ -29,7 +24,7 @@ export class OpenRouterService {
     payloadMessages.push(...messages);
 
     const payload: any = {
-      model: this.primaryModel,
+      model: this.defaultModel,
       messages: payloadMessages,
       temperature: 0.2
     };
@@ -38,34 +33,28 @@ export class OpenRouterService {
       payload.response_format = { type: 'json_object' };
     }
 
-    const models = [this.primaryModel, this.fallbackModel, this.tertiaryModel, this.quaternaryModel];
-    let lastError: any = null;
+    try {
+      const response = await axios.post(this.baseUrl, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        timeout: 25000
+      });
 
-    for (const model of models) {
-      payload.model = model;
-      try {
-        const response = await axios.post(this.baseUrl, payload, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`,
-            'HTTP-Referer': 'http://localhost:3000',
-            'X-Title': 'CloudDaddy AI Architect'
-          },
-          timeout: 20000 // Free-tier models can be slower
-        });
-
-        const content = response.data?.choices?.[0]?.message?.content;
-        if (content) {
-          return content.trim();
-        }
-      } catch (error: any) {
-        const errData = error.response ? JSON.stringify(error.response.data) : error.message;
-        console.warn(`OpenRouter model ${model} failed with: ${errData}`);
-        lastError = error;
+      const content = response.data?.choices?.[0]?.message?.content;
+      if (content) {
+        let trimmed = content.trim();
+        // Remove reasoning think tags if present
+        trimmed = trimmed.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+        return trimmed;
       }
+      throw new Error('Groq returned an empty response.');
+    } catch (error: any) {
+      const errData = error.response ? JSON.stringify(error.response.data) : error.message;
+      console.error(`Groq API invocation failed: ${errData}`);
+      throw error;
     }
-
-    throw new Error(`Failed to get response from all configured OpenRouter free models. Last error: ${lastError?.message || lastError}`);
   }
 
   public async generateArchitecture(prompt: string, platform = 'AWS', history: ChatMessage[] | null = null): Promise<any> {
@@ -83,14 +72,14 @@ export class OpenRouterService {
     const systemPrompt = getSystemPrompt(platform);
 
     try {
-      const resText = await this._callOpenRouter(
+      const resText = await this._callGroq(
         [{ role: 'user', content: fullPrompt }],
         systemPrompt,
         true
       );
       return JSON.parse(resText);
     } catch (e: any) {
-      console.error(`OpenRouter generate architecture failed: ${e}`);
+      console.error(`Groq generate architecture failed: ${e}`);
       return { error: e.message || e };
     }
   }
@@ -167,7 +156,7 @@ Rules:
 4. At the end of your response, ask this EXACT question: '${currentQuestion}'
 5. Do NOT ask any other questions. Do NOT output any JSON, YAML, code blocks, or diagram structures.`;
       
-      prompt = `Conversation history:\n${historyStr}User: ${userMessage}\n\nInstruction: Acknowledge user's input with brief tech insights, and then ask Question #${numUserMessages + 1}: '${currentQuestion}'\n\nGenerate your response:`;
+      prompt = `Conversation history:\n${historyStr}User: ${userMessage}\n\nInstruction: Acknowledge user's input with brief tech insights, and then ask Question #${numUserMessages + 1}: '${currentQuestion}'\n\nGenerate your technical response:`;
     } else {
       systemPrompt = `You are Cloudy AI, a helpful, enthusiastic, and expert cloud architect assistant specialized in ${platform}.
 The user is designing a cloud application.
@@ -177,18 +166,18 @@ Rules:
 2. Keep your response brief and to the point (maximum 2 sentences).
 3. Let the user know that you have gathered all standard architectural inputs. Suggest that they can mention any additional requirements, or click the 'Generate Architecture' button below to create their design.
 4. Do NOT ask any new questions. Do NOT output any JSON, YAML, code blocks, or diagram structures.`;
-
-      prompt = `Conversation history:\n${historyStr}User: ${userMessage}\n\nInstruction: Acknowledge user's input, let them know onboarding is complete, and suggest they click 'Generate Architecture' or mention additional requests.\n\nGenerate your response:`;
+      
+      prompt = `Conversation history:\n${historyStr}User: ${userMessage}\n\nInstruction: Acknowledge user's input, let them know onboarding is complete, and suggest they click 'Generate Architecture' or mention additional requests.\n\nGenerate your technical response:`;
     }
 
     try {
-      const resText = await this._callOpenRouter(
+      const resText = await this._callGroq(
         [{ role: 'user', content: prompt }],
         systemPrompt
       );
       return { reply: resText };
     } catch (e: any) {
-      console.error(`OpenRouter chat failed: ${e}`);
+      console.error(`Groq chat failed: ${e}`);
       return { reply: 'I encountered a minor connection issue. Tell me more about your requirements or click Generate Architecture whenever you are ready!' };
     }
   }
@@ -213,14 +202,14 @@ Example structure:
     const prompt = `Analyze this architecture and suggest improvements: ${architectureData}`;
 
     try {
-      const resText = await this._callOpenRouter(
+      const resText = await this._callGroq(
         [{ role: 'user', content: prompt }],
         systemPrompt,
         true
       );
       return JSON.parse(resText);
     } catch (e: any) {
-      console.error(`OpenRouter analysis failed: ${e}`);
+      console.error(`Groq analysis failed: ${e}`);
       return { error: e.message || e };
     }
   }

@@ -2,11 +2,7 @@ import { Router, Response } from 'express';
 import crypto from 'crypto';
 import { AuthenticatedRequest } from '../middleware/auth.js';
 import { OllamaService } from '../services/ollama.js';
-import { OpenRouterService } from '../services/openrouter.js';
-import { SiliconFlowService } from '../services/siliconflow.js';
-import { GeminiService } from '../services/gemini.js';
-import { OpenAIService } from '../services/openai.js';
-import { BedrockService } from '../services/bedrock.js';
+import { GroqService } from '../services/groq.js';
 import { S3Service } from '../services/s3.js';
 import { DynamoService } from '../services/dynamo.js';
 import { spawn } from 'child_process';
@@ -22,11 +18,7 @@ const router = Router();
 
 // Services instantiations
 const ollamaService = new OllamaService();
-const openrouterService = new OpenRouterService();
-const siliconflowService = new SiliconFlowService();
-const geminiService = new GeminiService();
-const openaiService = new OpenAIService();
-const bedrockService = new BedrockService();
+const groqService = new GroqService();
 const s3Service = new S3Service();
 const dynamoService = new DynamoService();
 
@@ -37,7 +29,25 @@ router.post('/architecture', async (req: AuthenticatedRequest, res: Response) =>
   }
 
   const runGeneration = async () => {
-    // 1. Try Ollama first!
+    // 1. Try Groq first!
+    try {
+      console.log('Attempting to generate architecture using Groq...');
+      const result = await groqService.generateArchitecture(prompt, platform, history);
+      if (result && !result.error) {
+        return {
+          status: 'success',
+          platform,
+          nodes: result.nodes || [],
+          edges: result.edges || [],
+          cost: result.cost || {}
+        };
+      }
+      console.warn(`Groq generation returned error: ${result?.error}. Falling back to Ollama...`);
+    } catch (e) {
+      console.warn(`Groq generation failed with exception: ${e}. Falling back to Ollama...`);
+    }
+
+    // 2. Try Ollama second
     try {
       console.log('Attempting to generate architecture using Ollama...');
       const result = await ollamaService.generateArchitecture(prompt, platform, history);
@@ -50,130 +60,18 @@ router.post('/architecture', async (req: AuthenticatedRequest, res: Response) =>
           cost: result.cost || {}
         };
       }
-      console.warn(`Ollama generation returned error: ${result?.error}. Falling back to OpenRouter...`);
-    } catch (e) {
-      console.warn(`Ollama generation failed with exception: ${e}. Falling back to OpenRouter...`);
-    }
-
-    // 2. Try OpenRouter second
-    try {
-      console.log('Attempting to generate architecture using OpenRouter (DeepSeek V3)...');
-      const result = await openrouterService.generateArchitecture(prompt, platform, history);
-      if (result && !result.error) {
-        return {
-          status: 'success',
-          platform,
-          nodes: result.nodes || [],
-          edges: result.edges || [],
-          cost: result.cost || {}
-        };
-      }
-      console.warn(`OpenRouter generation returned error: ${result?.error}. Falling back to SiliconFlow...`);
-    } catch (e) {
-      console.warn(`OpenRouter generation failed with exception: ${e}. Falling back to SiliconFlow...`);
-    }
-
-    // 3. Try SiliconFlow third
-    try {
-      console.log('Attempting to generate architecture using SiliconFlow...');
-      const result = await siliconflowService.generateArchitecture(prompt, platform, history);
-      if (result && !result.error) {
-        return {
-          status: 'success',
-          platform,
-          nodes: result.nodes || [],
-          edges: result.edges || [],
-          cost: result.cost || {}
-        };
-      }
-      console.warn(`SiliconFlow generation returned error: ${result?.error}. Falling back to Gemini...`);
-    } catch (e) {
-      console.warn(`SiliconFlow generation failed with exception: ${e}. Falling back to Gemini...`);
-    }
-
-    // 4. Try Gemini (Google) as the final fallback
-    let geminiResult: any = null;
-    try {
-      geminiResult = await geminiService.generateArchitecture(prompt, platform, history);
-      if (geminiResult && !geminiResult.error) {
-        return {
-          status: 'success',
-          platform,
-          nodes: geminiResult.nodes || [],
-          edges: geminiResult.edges || [],
-          cost: geminiResult.cost || {}
-        };
-      }
-    } catch (geminiErr) {
-      console.warn(`Gemini generation failed with exception: ${geminiErr}. Trying OpenAI/Bedrock fallbacks...`);
-      geminiResult = { error: `Gemini generation failed: ${geminiErr}` };
-    }
-
-    if (geminiResult && geminiResult.error) {
-      const errorLower = String(geminiResult.error).toLowerCase();
-      // Automatic OpenAI failover recovery fallback loop if Gemini key hits a rate limit block!
-      if (errorLower.includes('rate limit') || errorLower.includes('quota') || errorLower.includes('demand')) {
-        try {
-          if (openaiService.client) {
-            console.log('Gemini rate limited - attempting OpenAI Architecture generation fallback...');
-            const openaiResult = await openaiService.generateArchitecture(prompt, platform, history);
-            if (openaiResult && !openaiResult.error) {
-              console.log('Successfully recovered from Gemini rate limit using OpenAI fallback!');
-              return {
-                status: 'success',
-                platform,
-                nodes: openaiResult.nodes || [],
-                edges: openaiResult.edges || [],
-                cost: openaiResult.cost || {}
-              };
-            }
-          }
-        } catch (oaiErr) {
-          console.warn(`OpenAI fallback invocation failed: ${oaiErr}`);
-        }
-      }
-
-      // Try AWS Bedrock as the ultimate bulletproof fallback!
-      try {
-        console.log('Gemini generation failed - attempting AWS Bedrock fallback...');
-        const bedrockResult = await bedrockService.generateArchitecture(prompt, platform, history);
-        if (bedrockResult && !bedrockResult.error && (bedrockResult.nodes || bedrockResult.edges)) {
-          console.log('Successfully recovered from generation failure using AWS Bedrock fallback!');
-          return {
-            status: 'success',
-            platform,
-            nodes: bedrockResult.nodes || [],
-            edges: bedrockResult.edges || [],
-            cost: bedrockResult.cost || {}
-          };
-        }
-      } catch (bedrockErr) {
-        console.warn(`AWS Bedrock fallback generation failed: ${bedrockErr}`);
-      }
-
-      let errMsg = geminiResult.error || 'Unknown generation error';
-      const errMsgLower = String(errMsg).toLowerCase();
-      if (errMsgLower.includes('rate limit') || errMsgLower.includes('quota') || errMsgLower.includes('demand')) {
-        errMsg = (
-          'Failed to generate architecture. Connection to your local Ollama service at http://localhost:11434 failed, ' +
-          'and all cloud fallback services (Google Gemini, OpenAI, Bedrock) are currently rate-limited or unavailable. ' +
-          'Please make sure your local Ollama is active (`ollama run gemma3`) and listening on port 11434.'
-        );
-      }
-
+      console.warn(`Ollama generation returned error: ${result?.error}`);
       return {
         status: 'error',
-        message: errMsg
+        message: result?.error || 'Failed to generate architecture using all available models.'
+      };
+    } catch (e: any) {
+      console.error(`Ollama generation failed with exception: ${e}`);
+      return {
+        status: 'error',
+        message: `Failed to generate architecture. Groq connection failed and Ollama returned exception: ${e.message || e}`
       };
     }
-
-    return {
-      status: 'success',
-      platform,
-      nodes: geminiResult?.nodes || [],
-      edges: geminiResult?.edges || [],
-      cost: geminiResult?.cost || {}
-    };
   };
 
   const resultPayload = await runGeneration();
@@ -228,7 +126,27 @@ router.post('/chat', async (req: AuthenticatedRequest, res: Response) => {
     return res.status(400).json({ detail: 'Message is required' });
   }
 
-  // 1. Try Ollama first!
+  // 1. Try Groq first!
+  let replyText = '';
+  let hasFailed = false;
+  try {
+    console.log('Attempting chat completion using Groq...');
+    const result = await groqService.generateChatResponse(message, history, platform, question_index);
+    replyText = result.reply || '';
+    if (!replyText || replyText.toLowerCase().includes('connection issue') || replyText.toLowerCase().includes('rate limit') || replyText.toLowerCase().includes('quota')) {
+      hasFailed = true;
+    } else {
+      return res.json({
+        status: 'success',
+        reply: replyText
+      });
+    }
+  } catch (groqErr) {
+    console.warn(`Groq chat failed with exception: ${groqErr}. Falling back to Ollama...`);
+    hasFailed = true;
+  }
+
+  // 2. Try Ollama second
   try {
     console.log('Attempting chat completion using Ollama...');
     const result = await ollamaService.generateChatResponse(message, history, platform, question_index);
@@ -238,88 +156,13 @@ router.post('/chat', async (req: AuthenticatedRequest, res: Response) => {
         reply: result.reply
       });
     }
-    console.warn('Ollama chat returned connection/error reply. Falling back to OpenRouter...');
+    console.warn('Ollama chat returned connection/error reply. Falling back to heuristic...');
   } catch (e) {
-    console.warn(`Ollama chat failed with exception: ${e}. Falling back to OpenRouter...`);
+    console.warn(`Ollama chat failed with exception: ${e}. Falling back to heuristic...`);
   }
 
-  // 2. Try OpenRouter second
-  try {
-    console.log('Attempting chat completion using OpenRouter...');
-    const result = await openrouterService.generateChatResponse(message, history, platform, question_index);
-    if (result && result.reply && !result.reply.toLowerCase().includes('connection issue')) {
-      return res.json({
-        status: 'success',
-        reply: result.reply
-      });
-    }
-    console.warn('OpenRouter chat returned connection error. Falling back to SiliconFlow...');
-  } catch (e) {
-    console.warn(`OpenRouter chat failed with exception: ${e}. Falling back to SiliconFlow...`);
-  }
-
-  // 3. Try SiliconFlow third
-  try {
-    console.log('Attempting chat completion using SiliconFlow...');
-    const result = await siliconflowService.generateChatResponse(message, history, platform, question_index);
-    if (result && result.reply && !result.reply.toLowerCase().includes('connection issue')) {
-      return res.json({
-        status: 'success',
-        reply: result.reply
-      });
-    }
-    console.warn('SiliconFlow chat returned connection error. Falling back to Gemini...');
-  } catch (e) {
-    console.warn(`SiliconFlow chat failed with exception: ${e}. Falling back to Gemini...`);
-  }
-
-  // 4. Try Gemini (Google) as final fallback
-  let replyText = '';
-  try {
-    const result = await geminiService.generateChatResponse(message, history, platform, question_index);
-    replyText = result.reply || '';
-  } catch (geminiErr) {
-    console.warn(`Gemini chat failed with exception: ${geminiErr}. Falling back to OpenAI or heuristic.`);
-  }
-
-  const replyTextLower = replyText.toLowerCase();
-  const hasRateLimit = 
-    !replyText || 
-    replyTextLower.includes('quota') || 
-    replyTextLower.includes('rate limit') || 
-    replyTextLower.includes('rate limits') || 
-    replyTextLower.includes('high demand') || 
-    replyTextLower.includes('connection issue') || 
-    replyTextLower.includes('temporary') || 
-    replyTextLower.includes('temporarily') || 
-    replyTextLower.includes('leaked') ||
-    replyTextLower.includes('permission_denied') ||
-    replyTextLower.includes('forbidden');
-
-  if (hasRateLimit) {
-    // Automatic OpenAI failover recovery fallback loop if Gemini key hits a rate limit block!
-    try {
-      if (openaiService.client) {
-        console.log('Gemini rate limited - attempting OpenAI Chat completion fallback...');
-        const response = await openaiService.client.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: `You are Cloudy AI, a helpful, enthusiastic, and expert cloud architect specialized in ${platform}. Ask ONE clarifying question. Keep response to 2-3 sentences.` },
-            { role: 'user', content: message }
-          ]
-        });
-        const openaiReply = response.choices[0].message.content;
-        console.log('Successfully recovered from Gemini rate limit in chat using OpenAI fallback!');
-        return res.json({
-          status: 'success',
-          reply: openaiReply ? openaiReply.trim() : 'How else can I assist you with your architecture?'
-        });
-      }
-    } catch (oaiErr) {
-      console.warn(`OpenAI chat fallback failed: ${oaiErr}`);
-    }
-
-    // Heuristic fallback if both Gemini and OpenAI fail or are offline
+  if (hasFailed || !replyText) {
+    // Heuristic fallback if both Ollama and Groq fail
     const QUESTIONS: Record<string, string[]> = {
       AWS: [
         "What is the expected scale or active user base of your system? (e.g. thousands of monthly active users, or daily peaks, to help us size your resources properly?)",
@@ -348,7 +191,7 @@ router.post('/chat', async (req: AuthenticatedRequest, res: Response) => {
       Azure: [
         "What is the expected scale or active user base of your system? (e.g. thousands of monthly active users, or daily peaks, to help us size your resources properly?)",
         "How would you like to host and deliver your frontend client? (e.g. Azure Static Web Apps + Front Door CDN, or App Service?)",
-        "What compute tier fits your backend business logic best? (e.g. Serverless Azure ... containerized Azure Container Apps / Azure Kubernetes Service (AKS), or App Service?)",
+        "What compute tier fits your backend business logic best? (e.g. Serverless Azure Functions, containerized Azure Container Apps / Azure Kubernetes Service (AKS), or App Service?)",
         "What kind of database fits your data model? (e.g. Relational Azure SQL / Database for PostgreSQL, or high-throughput NoSQL via Cosmos DB?)",
         "How will clients communicate with your backend? (e.g. Azure API Management (APIM), or Application Gateway?)",
         "How would you like to handle user registration, logins, and JWT token validation? (e.g. Microsoft Entra ID / B2C, or custom OAuth?)",

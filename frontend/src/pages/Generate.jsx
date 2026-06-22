@@ -165,11 +165,22 @@ const Generate = () => {
     setIsGenerating(true);
     setError(null);
     try {
-      // Retrieve direct browser routing settings
-      let settings = { routingMode: 'cloud' };
+      let settings = {
+        routingMode: 'cloud',
+        localUrl: 'http://localhost:11434',
+        localApiKey: '',
+        localModel: 'gemma3'
+      };
       try {
         const saved = localStorage.getItem('clouddaddy_settings');
-        if (saved) settings = JSON.parse(saved);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.routingMode === 'local' && !localStorage.getItem('clouddaddy_explicit_local')) {
+            parsed.routingMode = 'cloud';
+            localStorage.setItem('clouddaddy_settings', JSON.stringify(parsed));
+          }
+          settings = { ...settings, ...parsed };
+        }
       } catch (e) {
         console.warn("Could not read local settings", e);
       }

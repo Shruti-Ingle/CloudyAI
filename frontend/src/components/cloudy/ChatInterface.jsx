@@ -87,7 +87,16 @@ const ChatInterface = ({ onGenerate, isGenerating }) => {
   const [settings, setSettings] = useState(() => {
     try {
       const saved = localStorage.getItem('clouddaddy_settings');
-      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Stale default migration: if 'local' routing mode is saved but was never explicitly set, migrate to 'cloud' (Groq)
+        if (parsed.routingMode === 'local' && !localStorage.getItem('clouddaddy_explicit_local')) {
+          parsed.routingMode = 'cloud';
+          localStorage.setItem('clouddaddy_settings', JSON.stringify(parsed));
+        }
+        return { ...DEFAULT_SETTINGS, ...parsed };
+      }
+      return DEFAULT_SETTINGS;
     } catch {
       return DEFAULT_SETTINGS;
     }
@@ -156,6 +165,11 @@ const ChatInterface = ({ onGenerate, isGenerating }) => {
   const saveSettings = (newSettings) => {
     setSettings(newSettings);
     localStorage.setItem('clouddaddy_settings', JSON.stringify(newSettings));
+    if (newSettings.routingMode === 'local') {
+      localStorage.setItem('clouddaddy_explicit_local', 'true');
+    } else {
+      localStorage.removeItem('clouddaddy_explicit_local');
+    }
   };
 
   const handlePlatformChange = (plat) => {

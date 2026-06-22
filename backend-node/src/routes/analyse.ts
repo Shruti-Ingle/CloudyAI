@@ -3,8 +3,8 @@ import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
 import { AuthenticatedRequest } from '../middleware/auth.js';
-import { GeminiService } from '../services/gemini.js';
-import { BedrockService } from '../services/bedrock.js';
+import { OllamaService } from '../services/ollama.js';
+import { GroqService } from '../services/groq.js';
 import { S3Service } from '../services/s3.js';
 import { TextractService } from '../services/textract.js';
 import { DynamoService } from '../services/dynamo.js';
@@ -12,8 +12,8 @@ import { DynamoService } from '../services/dynamo.js';
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-const geminiService = new GeminiService();
-const bedrockService = new BedrockService();
+const ollamaService = new OllamaService();
+const groqService = new GroqService();
 const s3Service = new S3Service();
 const textractService = new TextractService();
 const dynamoService = new DynamoService();
@@ -25,64 +25,37 @@ router.post('/architecture', async (req: AuthenticatedRequest, res: Response) =>
   }
 
   let result: any = null;
+  // 1. Try Groq first
   try {
-    console.log('Attempting to analyze architecture using Gemini...');
-    result = await geminiService.analyseArchitecture(architecture_data);
-  } catch (geminiErr) {
-    console.warn(`Gemini analysis failed with exception: ${geminiErr}. Trying AWS Bedrock fallback...`);
-    result = { error: `Gemini analysis failed: ${geminiErr}` };
+    console.log('Attempting to analyze architecture using Groq...');
+    const groqResult = await groqService.analyseArchitecture(architecture_data);
+    if (groqResult && !groqResult.error) {
+      result = groqResult;
+    } else {
+      console.warn(`Groq analysis returned error: ${groqResult?.error}. Falling back to Ollama...`);
+    }
+  } catch (e) {
+    console.warn(`Groq analysis failed with exception: ${e}. Falling back to Ollama...`);
+  }
+
+  // 2. Try Ollama second
+  if (!result) {
+    try {
+      console.log('Attempting to analyze architecture using Ollama...');
+      const ollamaResult = await ollamaService.analyseArchitecture(architecture_data);
+      if (ollamaResult && !ollamaResult.error) {
+        result = ollamaResult;
+      } else {
+        console.warn(`Ollama analysis returned error: ${ollamaResult?.error}`);
+        result = { error: ollamaResult?.error || 'Failed to analyze architecture' };
+      }
+    } catch (ollamaErr: any) {
+      console.warn(`Ollama analysis failed with exception: ${ollamaErr}`);
+      result = { error: `Analysis failed. Groq failed and Ollama threw exception: ${ollamaErr.message || ollamaErr}` };
+    }
   }
 
   if (result && result.error) {
-    // Try AWS Bedrock as the ultimate self-healing fallback!
-    try {
-      console.log('Gemini analysis failed - attempting AWS Bedrock fallback...');
-      const bedrockResult = await bedrockService.analyseArchitecture(architecture_data);
-      if (bedrockResult && !bedrockResult.error) {
-        console.log('Successfully recovered from analysis failure using AWS Bedrock fallback!');
-        const parsedResult = {
-          status: 'success',
-          issues: bedrockResult.issues || [],
-          suggested_nodes: bedrockResult.suggested_nodes || [],
-          suggested_edges: bedrockResult.suggested_edges || []
-        };
-
-        // Save custom analysis to DynamoDB
-        try {
-          const userId = req.user?.sub || 'anonymous';
-          const fileId = crypto.randomUUID();
-          let parsedNodes = null;
-          let parsedEdges = null;
-          try {
-            const parsed = JSON.parse(architecture_data);
-            if (parsed.nodes && parsed.edges) {
-              parsedNodes = parsed.nodes;
-              parsedEdges = parsed.edges;
-            }
-          } catch (e) {
-            // Ignore
-          }
-
-          const dbData = {
-            file_id: fileId,
-            issues: parsedResult.issues || [],
-            beforeNodes: parsedNodes,
-            beforeEdges: parsedEdges,
-            analysis: parsedResult
-          };
-
-          await dynamoService.saveGeneration(userId, `Custom Architecture Analysis`, 'AWS', dbData);
-          console.log(`Successfully logged Bedrock custom analysis in DynamoDB for user ${userId}`);
-        } catch (dbErr) {
-          console.warn(`Failed to perform DynamoDB saves for custom analysis: ${dbErr}`);
-        }
-
-        return res.json(parsedResult);
-      }
-    } catch (bedrockErr) {
-      console.warn(`AWS Bedrock fallback analysis failed: ${bedrockErr}`);
-    }
-
     return res.json({
       status: 'error',
       message: result.error
@@ -170,18 +143,22 @@ router.post('/upload', upload.single('file'), async (req: AuthenticatedRequest, 
       extractedText = `Mocked text extracted from ${req.file.originalname}: Web server with load balancer and database.`;
     }
 
-    // 4. Perform Gemini Architecture Analysis on the text
+    // 4. Perform Architecture Analysis on the text
     console.log('Analyzing extracted text...');
     let analysisResult: any = null;
     try {
-      analysisResult = await geminiService.analyseArchitecture(extractedText);
-    } catch (geminiErr) {
-      console.warn(`Gemini analysis in upload failed: ${geminiErr}. Trying Bedrock fallback...`);
+      console.log('Attempting to analyze uploaded text using Groq...');
+      analysisResult = await groqService.analyseArchitecture(extractedText);
+      if (analysisResult && analysisResult.error) {
+        throw new Error(analysisResult.error);
+      }
+    } catch (groqErr) {
+      console.warn(`Groq analysis in upload failed: ${groqErr}. Trying Ollama...`);
       try {
-        analysisResult = await bedrockService.analyseArchitecture(extractedText);
-      } catch (bedrockErr) {
-        console.error(`Bedrock fallback failed: ${bedrockErr}`);
-        analysisResult = { error: String(geminiErr) };
+        analysisResult = await ollamaService.analyseArchitecture(extractedText);
+      } catch (ollamaErr) {
+        console.error(`Ollama analysis in upload failed: ${ollamaErr}`);
+        analysisResult = { error: String(groqErr) };
       }
     }
 
