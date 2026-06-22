@@ -12,6 +12,29 @@ const UploadInput = ({ onUpload }) => {
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onUpload(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      onUpload(file);
+    }
+  };
+
+  const triggerFileInput = () => {
+    document.getElementById('file-upload-input').click();
+  };
+
   return (
     <div className="w-full glass-card rounded-2xl border border-slate-700/50 overflow-hidden">
       <div className="flex border-b border-slate-700/50 bg-slate-800/50">
@@ -51,14 +74,26 @@ const UploadInput = ({ onUpload }) => {
             </button>
           </form>
         ) : (
-          <div className="border-2 border-dashed border-slate-700 rounded-xl p-12 flex flex-col items-center justify-center text-center hover:border-indigo-500 hover:bg-indigo-500/5 transition-all cursor-pointer">
+          <div 
+            onClick={triggerFileInput}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            className="border-2 border-dashed border-slate-700 rounded-xl p-12 flex flex-col items-center justify-center text-center hover:border-indigo-500 hover:bg-indigo-500/5 transition-all cursor-pointer relative"
+          >
+            <input 
+              id="file-upload-input"
+              type="file"
+              accept=".png,.jpg,.jpeg,.pdf"
+              className="hidden"
+              onChange={handleFileChange}
+            />
             <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
               <UploadCloud className="w-8 h-8 text-indigo-400" />
             </div>
             <h4 className="text-white font-medium text-lg mb-2">Click or drag file to upload</h4>
             <p className="text-slate-400 text-sm max-w-sm mb-6">Supports PDF, PNG, or JPEG diagrams. CloudyAI will extract the components automatically.</p>
             <button 
-              onClick={() => onUpload('mock_upload_trigger')}
+              type="button"
               className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-600 transition-colors"
             >
               Select File

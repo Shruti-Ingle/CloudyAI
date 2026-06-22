@@ -162,19 +162,55 @@ LAYOUT COORDINATE RULES (CRITICAL to prevent overlap and make it beautiful):
 DYNAMIC COST ESTIMATION RULES:
 Provide a realistic estimated monthly cost breakdown for the cloud services you designed in the system. The total monthly cost must represent the logical sum of all individual service costs. Do NOT output a hardcoded/static price block or the same number for every prompt! Compute the service pricing logically based on realistic production usage matching the requirements.
 
-STANDARDIZED JSON SCHEMA (You MUST output ONLY a valid JSON object matching the following structure. Do not include any explanations, markdown code blocks, or text outside the JSON):
+STANDARDIZED JSON SCHEMA (You MUST output ONLY a valid JSON object matching the following structure. Do not include any explanations, markdown code blocks, or text outside the JSON. CRITICAL: You MUST design a custom set of nodes and edges specific to the user's prompt rather than copying the template examples!):
 {
   "nodes": [
-${info.example_nodes}
+    {
+      "id": "unique-node-id",
+      "data": {
+        "label": "Genuine ${plat} Service Name (e.g. ${info.dns})"
+      },
+      "position": {
+        "x": 400,
+        "y": 50
+      }
+    }
   ],
   "edges": [
-${info.example_edges}
+    {
+      "id": "edge-id",
+      "source": "source-node-id",
+      "target": "target-node-id"
+    }
   ],
   "cost": {
-    "total_monthly_cost": "${info.example_cost_total}",
+    "total_monthly_cost": "$Estimated Monthly Total",
     "services": [
-${info.example_cost_services}
+      {
+        "name": "Genuine ${plat} Service Name",
+        "monthly_cost": "$Est Monthly Cost",
+        "breakdown": "Cost calculation details"
+      }
     ]
   }
+}
+
+Example of how the structure should be populated (Use this strictly as a formatting reference. Do NOT copy these exact node labels. Design custom nodes and edges specific to the user's app requirements):
+Nodes Reference:
+[
+${info.example_nodes}
+]
+
+Edges Reference:
+[
+${info.example_edges}
+]
+
+Cost Reference:
+{
+  "total_monthly_cost": "${info.example_cost_total}",
+  "services": [
+${info.example_cost_services}
+  ]
 }`;
 }

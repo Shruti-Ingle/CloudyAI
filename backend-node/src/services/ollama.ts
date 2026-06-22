@@ -194,16 +194,21 @@ Rules:
   }
 
   public async analyseArchitecture(architectureData: string): Promise<any> {
-    const systemPrompt = `You are an expert cloud architect. Analyze the provided architecture and return a JSON object with 'issues' (a list of objects with 'severity', 'title', 'description', and 'suggestion') and 'suggested_nodes' and 'suggested_edges' arrays for React Flow representing the improved architecture. Do not include any explanations, markdown code blocks, or text outside the JSON.
+    const systemPrompt = `You are an expert cloud architect. Analyze the provided architecture and return a JSON object with 'issues' (a list of objects with 'severity', 'title', 'description', 'suggestion', and 'affected_nodes') and 'suggested_nodes' and 'suggested_edges' arrays for React Flow representing the improved architecture. Do not include any explanations, markdown code blocks, or text outside the JSON.
+
+Rules for 'issues':
+- 'severity' MUST be exactly one of: "Critical", "Warning", "Info", or "Good".
+- 'affected_nodes' MUST be an array of node IDs (strings) from the original input architecture that are directly related to or affected by this issue.
 
 Example structure:
 {
   "issues": [
     {
-      "severity": "high",
+      "severity": "Critical",
       "title": "Single Point of Failure",
       "description": "The database is deployed in a single availability zone without replication.",
-      "suggestion": "Enable multi-AZ deployment for high availability."
+      "suggestion": "Enable multi-AZ deployment for high availability.",
+      "affected_nodes": ["rds"]
     }
   ],
   "suggested_nodes": [],

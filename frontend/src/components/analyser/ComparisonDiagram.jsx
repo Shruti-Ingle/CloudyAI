@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -41,18 +41,25 @@ const initialEdgesAfter = [
 ];
 
 const ComparisonDiagram = ({ beforeNodes, beforeEdges, suggestedNodes, suggestedEdges, issues = [] }) => {
+  const hasBefore = beforeNodes && beforeNodes.length > 0;
   const [view, setView] = useState('after');
+
+  useEffect(() => {
+    if (!hasBefore) {
+      setView('after');
+    }
+  }, [hasBefore]);
   
-  const referenceBeforeNodes = beforeNodes || initialNodesBefore;
-  const referenceBeforeEdges = beforeEdges || initialEdgesBefore;
+  const referenceBeforeNodes = beforeNodes || [];
+  const referenceBeforeEdges = beforeEdges || [];
 
   const rawNodes = view === 'after' 
     ? (suggestedNodes || initialNodesAfter) 
-    : (beforeNodes || initialNodesBefore);
+    : referenceBeforeNodes;
     
   const rawEdges = view === 'after' 
     ? (suggestedEdges || initialEdgesAfter) 
-    : (beforeEdges || initialEdgesBefore);
+    : referenceBeforeEdges;
 
   const getServiceIcon = (label = '') => {
     const l = label.toLowerCase();
@@ -119,18 +126,34 @@ const ComparisonDiagram = ({ beforeNodes, beforeEdges, suggestedNodes, suggested
         const hasIssue = issues.some(issue => {
           const title = (issue.title || '').toLowerCase();
           const desc = (issue.description || '').toLowerCase();
+
+          // Check direct affected_nodes list from LLM output if available
+          if (issue.affected_nodes && Array.isArray(issue.affected_nodes)) {
+            return issue.affected_nodes.some(an => 
+              String(an).toLowerCase() === String(node.id).toLowerCase() ||
+              l.includes(String(an).toLowerCase()) ||
+              String(an).toLowerCase().includes(l)
+            );
+          }
+
+          // Strict substring keyword matching (filtering out generic names)
           const cleanLabel = l.replace(/[^a-z0-9\s]/g, ' ');
           const words = cleanLabel.split(/\s+/).filter(w => w.length > 2);
-          const matchesKeyword = words.some(word => title.includes(word) || desc.includes(word));
+          const genericWords = ['server', 'client', 'logic', 'node', 'resource', 'device', 'cloud', 'aws', 'azure', 'gcp'];
+          const filteredWords = words.filter(w => !genericWords.includes(w));
+          if (filteredWords.length === 0) return false;
+
+          const matchesKeyword = filteredWords.some(word => title.includes(word) || desc.includes(word));
           
           const isDbIssue = (l.includes('db') || l.includes('database') || l.includes('rds') || l.includes('sql') || l.includes('dynamo')) &&
-                            (title.includes('db') || title.includes('database') || desc.includes('db') || desc.includes('database') || title.includes('backup') || desc.includes('backup'));
+                            (title.includes('db') || title.includes('database') || desc.includes('db') || desc.includes('database')) &&
+                            (title.includes('backup') || desc.includes('backup') || title.includes('failover') || desc.includes('failover') || title.includes('replication') || desc.includes('replication'));
           
-          const isSecurityIssue = (l.includes('waf') || l.includes('firewall') || l.includes('security') || l.includes('shield') || l.includes('cluster') || l.includes('api') || l.includes('gateway') || l.includes('server') || l.includes('ec2')) &&
+          const isSecurityIssue = (l.includes('waf') || l.includes('firewall') || l.includes('security') || l.includes('shield')) &&
                                   (title.includes('waf') || title.includes('firewall') || title.includes('security') || desc.includes('waf') || desc.includes('firewall') || desc.includes('security'));
                                   
-          const isCostIssue = (l.includes('terraform') || l.includes('instance') || l.includes('ec2') || l.includes('monolith')) &&
-                              (title.includes('cost') || desc.includes('cost') || title.includes('terraform') || desc.includes('terraform'));
+          const isCostIssue = (l.includes('instance') || l.includes('ec2') || l.includes('monolith')) &&
+                              (title.includes('cost') || desc.includes('cost') || title.includes('resize') || desc.includes('resize') || title.includes('overprovisioned') || desc.includes('overprovisioned'));
 
           return matchesKeyword || isDbIssue || isSecurityIssue || isCostIssue;
         });
@@ -146,19 +169,21 @@ const ComparisonDiagram = ({ beforeNodes, beforeEdges, suggestedNodes, suggested
         }
       } else {
         // Green glow check indicator for newly suggested/optimized nodes
-        const isNewNode = !referenceBeforeNodes.some(beforeNode => {
-          const beforeLabel = (beforeNode.label || beforeNode.data?.label || '').toLowerCase();
-          return beforeNode.id === node.id || beforeLabel === l;
-        });
+        if (hasBefore) {
+          const isNewNode = !referenceBeforeNodes.some(beforeNode => {
+            const beforeLabel = (beforeNode.label || beforeNode.data?.label || '').toLowerCase();
+            return beforeNode.id === node.id || beforeLabel === l;
+          });
 
-        if (isNewNode) {
-          border = '2.5px solid #10b981';
-          shadowColor = 'rgba(16, 185, 129, 0.6)';
-          badge = (
-            <div className="absolute -top-2.5 -right-2.5 bg-emerald-600 border border-emerald-500 text-white rounded-full p-1 shadow-lg flex items-center justify-center z-10">
-              <CheckCircle2 className="w-3 h-3" />
-            </div>
-          );
+          if (isNewNode) {
+            border = '2.5px solid #10b981';
+            shadowColor = 'rgba(16, 185, 129, 0.6)';
+            badge = (
+              <div className="absolute -top-2.5 -right-2.5 bg-emerald-600 border border-emerald-500 text-white rounded-full p-1 shadow-lg flex items-center justify-center z-10">
+                <CheckCircle2 className="w-3 h-3" />
+              </div>
+            );
+          }
         }
       }
 
@@ -220,18 +245,32 @@ const ComparisonDiagram = ({ beforeNodes, beforeEdges, suggestedNodes, suggested
         return issues.some(issue => {
           const title = (issue.title || '').toLowerCase();
           const desc = (issue.description || '').toLowerCase();
+          
+          if (issue.affected_nodes && Array.isArray(issue.affected_nodes)) {
+            return issue.affected_nodes.some(an => 
+              String(an).toLowerCase() === String(node.id).toLowerCase() ||
+              l.includes(String(an).toLowerCase()) ||
+              String(an).toLowerCase().includes(l)
+            );
+          }
+
           const cleanLabel = l.replace(/[^a-z0-9\s]/g, ' ');
           const words = cleanLabel.split(/\s+/).filter(w => w.length > 2);
-          const matchesKeyword = words.some(word => title.includes(word) || desc.includes(word));
+          const genericWords = ['server', 'client', 'logic', 'node', 'resource', 'device', 'cloud', 'aws', 'azure', 'gcp'];
+          const filteredWords = words.filter(w => !genericWords.includes(w));
+          if (filteredWords.length === 0) return false;
+
+          const matchesKeyword = filteredWords.some(word => title.includes(word) || desc.includes(word));
           
           const isDbIssue = (l.includes('db') || l.includes('database') || l.includes('rds') || l.includes('sql') || l.includes('dynamo')) &&
-                            (title.includes('db') || title.includes('database') || desc.includes('db') || desc.includes('database') || title.includes('backup') || desc.includes('backup'));
+                            (title.includes('db') || title.includes('database') || desc.includes('db') || desc.includes('database')) &&
+                            (title.includes('backup') || desc.includes('backup') || title.includes('failover') || desc.includes('failover') || title.includes('replication') || desc.includes('replication'));
           
-          const isSecurityIssue = (l.includes('waf') || l.includes('firewall') || l.includes('security') || l.includes('shield') || l.includes('cluster') || l.includes('api') || l.includes('gateway') || l.includes('server') || l.includes('ec2')) &&
+          const isSecurityIssue = (l.includes('waf') || l.includes('firewall') || l.includes('security') || l.includes('shield')) &&
                                   (title.includes('waf') || title.includes('firewall') || title.includes('security') || desc.includes('waf') || desc.includes('firewall') || desc.includes('security'));
                                   
-          const isCostIssue = (l.includes('terraform') || l.includes('instance') || l.includes('ec2') || l.includes('monolith')) &&
-                              (title.includes('cost') || desc.includes('cost') || title.includes('terraform') || desc.includes('terraform'));
+          const isCostIssue = (l.includes('instance') || l.includes('ec2') || l.includes('monolith')) &&
+                              (title.includes('cost') || desc.includes('cost') || title.includes('resize') || desc.includes('resize') || title.includes('overprovisioned') || desc.includes('overprovisioned'));
 
           return matchesKeyword || isDbIssue || isSecurityIssue || isCostIssue;
         });
@@ -248,7 +287,7 @@ const ComparisonDiagram = ({ beforeNodes, beforeEdges, suggestedNodes, suggested
         strokeWidth = 2;
       }
     } else {
-      const isNewEdge = !referenceBeforeEdges.some(beforeEdge => 
+      const isNewEdge = hasBefore && !referenceBeforeEdges.some(beforeEdge => 
         beforeEdge.id === edge.id || 
         (beforeEdge.source === edge.source && beforeEdge.target === edge.target)
       );
@@ -287,24 +326,26 @@ const ComparisonDiagram = ({ beforeNodes, beforeEdges, suggestedNodes, suggested
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="flex items-center gap-4 p-4 border-b border-slate-700/50 bg-slate-800/80">
-        <button 
-          onClick={() => setView('before')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            view === 'before' ? 'bg-red-500/20 text-red-400 border border-red-500/50' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-transparent'
-          }`}
-        >
-          Current Architecture
-        </button>
-        <button 
-          onClick={() => setView('after')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            view === 'after' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-transparent'
-          }`}
-        >
-          Suggested Architecture
-        </button>
-      </div>
+      {hasBefore && (
+        <div className="flex items-center gap-4 p-4 border-b border-slate-700/50 bg-slate-800/80">
+          <button 
+            onClick={() => setView('before')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              view === 'before' ? 'bg-red-500/20 text-red-400 border border-red-500/50' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-transparent'
+            }`}
+          >
+            Current Architecture
+          </button>
+          <button 
+            onClick={() => setView('after')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              view === 'after' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-transparent'
+            }`}
+          >
+            Suggested Architecture
+          </button>
+        </div>
+      )}
       
       <div className="flex-1 bg-slate-900 relative">
         <ReactFlow
@@ -331,9 +372,14 @@ const ComparisonDiagram = ({ beforeNodes, beforeEdges, suggestedNodes, suggested
             Showing issues (Red = Bottleneck/Costly)
           </div>
         )}
-        {view === 'after' && (
+        {view === 'after' && hasBefore && (
           <div className="absolute top-4 right-4 bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-md">
             Showing improvements (Green = Added/Optimised)
+          </div>
+        )}
+        {view === 'after' && !hasBefore && (
+          <div className="absolute top-4 right-4 bg-slate-850/80 border border-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-md">
+            Suggested Architecture Design
           </div>
         )}
       </div>

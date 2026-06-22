@@ -4,7 +4,7 @@ import ChatInterface from '../components/cloudy/ChatInterface';
 import FlowDiagram from '../components/architecture/FlowDiagram';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
-import { AlertCircle, ShieldAlert, ShieldCheck, HelpCircle, ArrowRight, Activity, Zap } from 'lucide-react';
+import { AlertCircle, ShieldAlert, ShieldCheck, HelpCircle, ArrowRight, Activity, Zap, Globe, Cloud, Cpu, Database, Server, HardDrive, Shield } from 'lucide-react';
 import { saveHistoryItem, getHistoryItems } from '../utils/history';
 import { generateLocalArchitecture } from '../utils/localOllama';
 
@@ -328,6 +328,62 @@ const Generate = () => {
 
   const currentTotalCost = getNumericCost();
 
+  const getLayerName = (y, label = '') => {
+    const l = label.toLowerCase();
+    if (y <= 100 || l.includes('client') || l.includes('user') || l.includes('dns') || l.includes('route 53') || l.includes('domain')) {
+      return 'dns';
+    }
+    if ((y > 100 && y <= 250) || l.includes('api') || l.includes('gateway') || l.includes('cdn') || l.includes('cloudfront') || l.includes('balancer') || l.includes('alb') || l.includes('waf') || l.includes('firewall') || l.includes('front door')) {
+      return 'gateway';
+    }
+    if ((y > 250 && y <= 400) || l.includes('lambda') || l.includes('compute') || l.includes('function') || l.includes('run') || l.includes('logic') || l.includes('ecs') || l.includes('eks') || l.includes('cluster') || l.includes('server') || l.includes('ec2') || l.includes('vm')) {
+      return 'logic';
+    }
+    return 'storage';
+  };
+
+  const getLayerBreakdown = () => {
+    const layers = {
+      dns: {
+        title: 'DNS & Ingress Layer',
+        description: 'Manages user access, DNS resolution, and client application entrypoints.',
+        icon: Globe,
+        color: 'from-indigo-500/20 to-purple-500/10 border-indigo-500/30 text-indigo-400',
+        nodes: []
+      },
+      gateway: {
+        title: 'API Gateway & Content Delivery (CDN)',
+        description: 'Handles content caching, routing proxy, request rate-limiting, and ingress load balancing.',
+        icon: Cloud,
+        color: 'from-sky-500/20 to-blue-500/10 border-sky-500/30 text-sky-400',
+        nodes: []
+      },
+      logic: {
+        title: 'Compute & Logical Business Layer',
+        description: 'Runs backend microservices, serverless functions, containerized servers, and API business controllers.',
+        icon: Cpu,
+        color: 'from-orange-500/20 to-amber-500/10 border-orange-500/30 text-orange-400',
+        nodes: []
+      },
+      storage: {
+        title: 'Database & Storage Layer',
+        description: 'Persists application data, transaction records, caches, blob objects, IAM pools, and secrets.',
+        icon: Database,
+        color: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/30 text-emerald-400',
+        nodes: []
+      }
+    };
+
+    nodes.forEach(node => {
+      const label = node.label || node.data?.label || 'Cloud Resource';
+      const y = node.position?.y || 0;
+      const layerKey = getLayerName(y, label);
+      layers[layerKey].nodes.push(node);
+    });
+
+    return Object.values(layers);
+  };
+
   return (
     <PageWrapper className="flex gap-6 h-full">
       {/* Cloudy Chat Column */}
@@ -378,6 +434,15 @@ const Generate = () => {
                 {securityIssues.some(i => i.severity === 'critical' || i.severity === 'high') && (
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
                 )}
+              </button>
+              <button 
+                onClick={() => setActiveTab('layers')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === 'layers' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-700'
+                }`}
+                disabled={isGenerating}
+              >
+                Layers Breakdown
               </button>
               <button 
                 onClick={() => setActiveTab('json')}
@@ -573,6 +638,78 @@ const Generate = () => {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    </motion.div>
+                  ) : activeTab === 'layers' ? (
+                    /* 3.5 Layers Breakdown Tab */
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="w-full h-full bg-slate-900 rounded-xl p-6 overflow-auto border border-slate-700/50 flex flex-col gap-6 font-Outfit text-left"
+                    >
+                      <div>
+                        <h5 className="text-sm font-bold text-white uppercase tracking-wider mb-1">Architecture Layers Breakdown</h5>
+                        <p className="text-xs text-slate-500 font-medium">Layer-wise categorization of the cloud services designed in your system topology.</p>
+                      </div>
+
+                      <div className="flex flex-col gap-5">
+                        {getLayerBreakdown().map((layer, index) => {
+                          const LayerIcon = layer.icon;
+                          return (
+                            <div 
+                              key={index}
+                              className={`p-4 rounded-xl bg-gradient-to-br ${layer.color} border flex flex-col md:flex-row gap-4 shadow-md`}
+                            >
+                              <div className="shrink-0">
+                                <div className="p-2.5 bg-slate-950/40 rounded-xl border border-slate-800">
+                                  <LayerIcon className="w-5 h-5" />
+                                </div>
+                              </div>
+                              <div className="flex-1 flex flex-col gap-3">
+                                <div>
+                                  <h6 className="text-sm font-bold text-white flex items-center gap-2">
+                                    {layer.title}
+                                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-slate-950/50 text-slate-300 font-bold border border-slate-800">
+                                      {layer.nodes.length} Service{layer.nodes.length !== 1 ? 's' : ''}
+                                    </span>
+                                  </h6>
+                                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">{layer.description}</p>
+                                </div>
+
+                                {layer.nodes.length > 0 ? (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mt-1">
+                                    {layer.nodes.map((node, nodeIdx) => {
+                                      const label = node.label || node.data?.label || 'Cloud Resource';
+                                      return (
+                                        <div 
+                                          key={nodeIdx}
+                                          className="p-2.5 bg-slate-950/50 border border-slate-850 hover:border-slate-800 rounded-xl flex items-center gap-2.5 transition-colors"
+                                        >
+                                          <div className="shrink-0 p-1.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-400">
+                                            {label.toLowerCase().includes('client') || label.toLowerCase().includes('frontend') ? <Globe className="w-3.5 h-3.5 text-indigo-400" /> :
+                                             label.toLowerCase().includes('api') || label.toLowerCase().includes('gateway') || label.toLowerCase().includes('cdn') ? <Cloud className="w-3.5 h-3.5 text-sky-400" /> :
+                                             label.toLowerCase().includes('lambda') || label.toLowerCase().includes('compute') || label.toLowerCase().includes('logic') || label.toLowerCase().includes('ecs') || label.toLowerCase().includes('server') ? <Cpu className="w-3.5 h-3.5 text-orange-400" /> :
+                                             label.toLowerCase().includes('db') || label.toLowerCase().includes('database') || label.toLowerCase().includes('sql') ? <Database className="w-3.5 h-3.5 text-emerald-400" /> :
+                                             label.toLowerCase().includes('s3') || label.toLowerCase().includes('bucket') || label.toLowerCase().includes('storage') ? <HardDrive className="w-3.5 h-3.5 text-rose-400" /> :
+                                             <Server className="w-3.5 h-3.5 text-slate-400" />}
+                                          </div>
+                                          <div className="text-left min-w-0">
+                                            <p className="text-xs font-bold text-white truncate" title={label}>{label}</p>
+                                            <p className="text-[9px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
+                                              ID: {node.id}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-slate-500 italic mt-0.5">No resources designed in this layer tier.</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </motion.div>
                   ) : (

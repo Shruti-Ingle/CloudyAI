@@ -69,10 +69,21 @@ const Analyse = () => {
     setBeforeEdges(null);
     
     try {
+      let response;
       let parsedNodes = null;
       let parsedEdges = null;
-      let payload = data;
-      if (typeof data === 'string') {
+
+      if (data instanceof File) {
+        // Multipart file upload to /analyse/upload
+        const formData = new FormData();
+        formData.append('file', data);
+        response = await api.post('/analyse/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      } else if (typeof data === 'string') {
+        let payload = data;
         try {
           const parsed = JSON.parse(data);
           if (parsed.nodes && parsed.edges) {
@@ -84,32 +95,31 @@ const Analyse = () => {
         } catch (e) {
           // Paste was plain text or not standard flow JSON
         }
-      } else {
-        payload = JSON.stringify({ name: "Legacy System", platform: "AWS", components: [] });
+        response = await api.post('/analyse/architecture', { architecture_data: payload });
       }
 
-      const response = await api.post('/analyse/architecture', { architecture_data: payload });
-      if (response.data && response.data.status === 'success') {
-        setAnalysisData(response.data);
-        setIssues(response.data.issues || []);
+      if (response && response.data && response.data.status === 'success') {
+        const resultData = response.data.analysis || response.data;
+        setAnalysisData(resultData);
+        setIssues(resultData.issues || []);
         setHasAnalysed(true);
 
         // Dynamically save user analysis to local storage history
         saveHistoryItem({
           type: 'analysed',
-          title: "Custom Architecture Analysis",
+          title: data instanceof File ? `Analysed File: ${data.name}` : "Custom Architecture Analysis",
           platform: "AWS",
-          issues: response.data.issues?.length || 0,
-          issues_list: response.data.issues || [],
+          issues: resultData.issues?.length || 0,
+          issues_list: resultData.issues || [],
           beforeNodes: parsedNodes,
           beforeEdges: parsedEdges,
-          rawAnalysis: response.data
+          rawAnalysis: resultData
         });
       } else {
-        setError(response.data?.message || 'Failed to analyse architecture');
+        setError(response?.data?.message || 'Failed to analyse architecture');
       }
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'Connection error to the backend');
+      setError(err.response?.data?.detail || err.response?.data?.message || err.message || 'Connection error to the backend');
     } finally {
       setIsAnalysing(false);
     }
