@@ -58,19 +58,28 @@ app.get('/', (req: Request, res: Response) => {
   return res.json({ status: 'ok', message: 'CloudyAI API is running' });
 });
 
-// App initialization
-async function startServer() {
+// App initialization promise for Lambda
+export const initPromise = (async () => {
   try {
     console.log('Loading configurations and AWS Secrets...');
-    await initializeConfig();
-    
+    return await initializeConfig();
+  } catch (error) {
+    console.error('Fatal: Failed to load config/secrets:', error);
+    throw error;
+  }
+})();
+
+// Start server locally if not running in AWS Lambda
+const isLambda = !!(process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.AWS_EXECUTION_ENV);
+if (!isLambda) {
+  initPromise.then(() => {
     app.listen(port, () => {
       console.log(`🚀 CloudyAI Node.js Backend is running at http://localhost:${port}`);
     });
-  } catch (error) {
+  }).catch((error) => {
     console.error('Fatal: Failed to start backend app:', error);
     process.exit(1);
-  }
+  });
 }
 
-startServer();
+export default app;
