@@ -175,6 +175,7 @@ const Analyse = () => {
               beforeEdges={beforeEdges}
               suggestedNodes={analysisData?.suggested_nodes}
               suggestedEdges={analysisData?.suggested_edges}
+              issues={issues}
             />
           </div>
         </motion.div>
